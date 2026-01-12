@@ -146,3 +146,46 @@
 
 **Verified:**
 - [x] typecheck passes
+
+---
+## 2024-01-12 - US-007: Levine PhenoAge calculation
+
+**Implemented:**
+- src/lib/calculations/phenoage.ts with calculatePhenoAge(biomarkers, chronologicalAge)
+- Three-step formula: calculate xb (linear combination), calculate m (mortality risk), calculate PhenoAge
+- Returns {phenoAge, delta} or null if missing required biomarkers
+- Handles CRP <= 0 edge case by using 0.01
+- Rounds to 1 decimal place
+
+**Files created:**
+- src/lib/calculations/phenoage.ts
+
+**Learnings:**
+- Formula coefficients from Levine et al. (2018) paper
+- gamma constant = 0.0077
+- Use Math.log for natural log in JavaScript
+
+**Verified:**
+- [x] typecheck passes
+
+---
+## 2024-01-12 - US-008: Health data store
+
+**Implemented:**
+- src/lib/store/health-data.ts with HealthDataStore singleton
+- src/lib/extractors/body-comp.ts for DEXA data extraction
+- Methods: loadAllData(), getBiomarkers(), getBodyComp(), getActivity(), getPhenoAge(), getHealthSummary()
+- Coordinates all parsers and extractors
+- getHealthSummary() returns formatted text for agent context
+
+**Files created:**
+- src/lib/store/health-data.ts
+- src/lib/extractors/body-comp.ts
+
+**Learnings:**
+- Singleton pattern: export instance of class
+- Lazy loading: ensureLoaded() calls loadAllData() if not loaded
+- Activity data averages useful for summary
+
+**Verified:**
+- [x] typecheck passes

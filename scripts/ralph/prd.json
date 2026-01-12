@@ -133,7 +133,7 @@
         "typecheck passes"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "Coordinate parsers and extractors. Body comp from sample-dexa.txt, activity from sample-whoop.csv, biomarkers from sample-bloodwork.txt"
     },
     {
