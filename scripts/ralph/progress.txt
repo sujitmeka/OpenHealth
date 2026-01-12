@@ -335,3 +335,52 @@
 
 **Verified:**
 - [x] typecheck passes
+
+---
+## 2024-01-12 - US-015: Data sync on startup and manual resync
+
+**Implemented:**
+- App loads data on startup via HealthDataStore lazy loading
+- SyncButton client component with loading state
+- /api/sync POST endpoint to re-scan /data folder
+- Sonner toast for success/error feedback
+- Page reloads after successful sync to show updated data
+- Layout includes Toaster component
+
+**Files created:**
+- src/components/SyncButton.tsx
+- src/app/api/sync/route.ts
+- src/components/ui/sonner.tsx (via shadcn)
+
+**Files modified:**
+- src/app/layout.tsx (add Toaster, update metadata)
+- src/app/page.tsx (use SyncButton)
+
+**Learnings:**
+- Use sonner for toast notifications (shadcn wrapper)
+- Toaster goes in layout.tsx for app-wide availability
+- window.location.reload() to refresh server component data
+
+**Verified:**
+- [x] typecheck passes
+
+---
+## BUILD COMPLETE
+
+All 16 user stories have been implemented:
+- US-016: Sample data files (priority 0)
+- US-001: Project scaffolding (priority 1)
+- US-002: Data folder structure and file detection (priority 2)
+- US-003: Text file parsing (priority 3)
+- US-004: CSV parsing (priority 4)
+- US-005: XLSX parsing (priority 5)
+- US-006: Biomarker extraction from text (priority 6)
+- US-007: Levine PhenoAge calculation (priority 7)
+- US-008: Health data store (priority 8)
+- US-009: Dashboard layout shell (priority 9)
+- US-010: Dashboard data integration (priority 10)
+- US-011: Areas to Improve logic (priority 11)
+- US-012: Claude Agent SDK setup (priority 12)
+- US-013: Chat API route (priority 13)
+- US-014: Chat UI component (priority 14)
+- US-015: Data sync on startup and manual resync (priority 15)

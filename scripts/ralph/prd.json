@@ -249,7 +249,7 @@
         "typecheck passes"
       ],
       "priority": 15,
-      "passes": false,
+      "passes": true,
       "notes": "npx shadcn@latest add button sonner (for toast). May need API route for resync or server action."
     }
   ]

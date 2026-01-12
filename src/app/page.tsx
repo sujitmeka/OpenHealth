@@ -14,6 +14,7 @@ import {
 } from '@/lib/types/health';
 import { getImprovements } from '@/lib/analysis/improvements';
 import { Chat } from '@/components/Chat';
+import { SyncButton } from '@/components/SyncButton';
 
 export default function Home() {
   // Load health data on server side
@@ -79,9 +80,7 @@ export default function Home() {
             <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">
               HealthAI Dashboard
             </h1>
-            <button className="px-4 py-2 bg-zinc-900 text-white rounded-lg hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200">
-              Sync Data
-            </button>
+            <SyncButton />
           </div>
 
           {/* Age Display */}
