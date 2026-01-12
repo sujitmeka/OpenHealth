@@ -13,6 +13,7 @@ import {
   getStatusBgColor,
 } from '@/lib/types/health';
 import { getImprovements } from '@/lib/analysis/improvements';
+import { Chat } from '@/components/Chat';
 
 export default function Home() {
   // Load health data on server side
@@ -285,11 +286,7 @@ export default function Home() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-48 flex items-center justify-center border border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg">
-              <p className="text-zinc-500 dark:text-zinc-400">
-                Chat interface placeholder
-              </p>
-            </div>
+            <Chat />
           </CardContent>
         </Card>
       </div>

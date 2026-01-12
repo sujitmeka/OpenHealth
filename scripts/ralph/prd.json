@@ -234,7 +234,7 @@
         "typecheck passes"
       ],
       "priority": 14,
-      "passes": false,
+      "passes": true,
       "notes": "Use React state for messages array. Fetch to /api/chat. Consider npx shadcn@latest add input button for styled components."
     },
     {

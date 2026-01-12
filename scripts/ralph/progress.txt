@@ -306,3 +306,32 @@
 
 **Verified:**
 - [x] typecheck passes
+
+---
+## 2024-01-12 - US-014: Chat UI component
+
+**Implemented:**
+- Created components/Chat.tsx as client component ('use client')
+- Text input field with send button (shadcn Input, Button)
+- Message history with alternating user/assistant bubbles
+- Loading indicator with bouncing dots animation
+- Auto-scroll to latest message using useRef
+- Integrated into dashboard page.tsx
+- Fetches to /api/chat on submit
+- Error handling with inline error display
+
+**Files created:**
+- src/components/Chat.tsx
+- src/components/ui/input.tsx (via shadcn)
+- src/components/ui/button.tsx (via shadcn)
+
+**Files modified:**
+- src/app/page.tsx
+
+**Learnings:**
+- Use 'use client' for components with React hooks
+- useRef for auto-scroll to messagesEndRef div
+- Animate loading dots with tailwind animate-bounce and animationDelay
+
+**Verified:**
+- [x] typecheck passes
