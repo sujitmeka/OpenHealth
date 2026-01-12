@@ -5,8 +5,65 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { HealthDataStore } from '@/lib/store/health-data';
+import {
+  BIOMARKER_REFERENCES,
+  getBiomarkerStatus,
+  getStatusColor,
+} from '@/lib/types/health';
 
 export default function Home() {
+  // Load health data on server side
+  const biomarkers = HealthDataStore.getBiomarkers();
+  const bodyComp = HealthDataStore.getBodyComp();
+  const activity = HealthDataStore.getActivity();
+  const phenoAge = HealthDataStore.getPhenoAge();
+  const chronoAge = HealthDataStore.getChronologicalAge();
+
+  // Calculate activity averages
+  const activityAvg =
+    activity.length > 0
+      ? {
+          hrv:
+            activity.reduce((sum, d) => sum + d.hrv, 0) / activity.length,
+          rhr:
+            activity.reduce((sum, d) => sum + d.rhr, 0) / activity.length,
+          sleep:
+            activity.reduce((sum, d) => sum + d.sleepHours, 0) /
+            activity.length,
+        }
+      : null;
+
+  // Format biomarkers for display (excluding patientAge)
+  const biomarkerEntries = Object.entries(biomarkers)
+    .filter(([key]) => key !== 'patientAge')
+    .map(([key, value]) => {
+      const ref = BIOMARKER_REFERENCES[key];
+      const status = getBiomarkerStatus(key, value as number);
+      return {
+        key,
+        name: ref?.displayName ?? key,
+        value: value as number,
+        unit: ref?.unit ?? '',
+        status,
+        colorClass: getStatusColor(status),
+      };
+    });
+
+  // Body comp entries
+  const bodyCompEntries = Object.entries(bodyComp).map(([key, value]) => {
+    const ref = BIOMARKER_REFERENCES[key];
+    const status = getBiomarkerStatus(key, value as number);
+    return {
+      key,
+      name: ref?.displayName ?? formatKey(key),
+      value: value as number,
+      unit: ref?.unit ?? '',
+      status,
+      colorClass: getStatusColor(status),
+    };
+  });
+
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -28,7 +85,7 @@ export default function Home() {
                 Chronological Age:{' '}
               </span>
               <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-                -- years
+                {chronoAge !== null ? `${chronoAge} years` : '--'}
               </span>
             </div>
             <div>
@@ -36,13 +93,25 @@ export default function Home() {
                 Biological Age:{' '}
               </span>
               <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-                -- years
+                {phenoAge !== null ? `${phenoAge.phenoAge} years` : '--'}
               </span>
             </div>
             <div>
               <span className="text-zinc-500 dark:text-zinc-400">Delta: </span>
-              <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-                --
+              <span
+                className={`font-semibold ${
+                  phenoAge !== null
+                    ? phenoAge.delta < 0
+                      ? 'text-green-600 dark:text-green-400'
+                      : phenoAge.delta > 0
+                        ? 'text-red-600 dark:text-red-400'
+                        : 'text-zinc-900 dark:text-zinc-100'
+                    : 'text-zinc-900 dark:text-zinc-100'
+                }`}
+              >
+                {phenoAge !== null
+                  ? `${phenoAge.delta >= 0 ? '+' : ''}${phenoAge.delta} years`
+                  : '--'}
               </span>
             </div>
           </div>
@@ -57,9 +126,25 @@ export default function Home() {
               <CardDescription>Lab results and biomarkers</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-zinc-500 dark:text-zinc-400">
-                No data loaded
-              </p>
+              {biomarkerEntries.length > 0 ? (
+                <div className="space-y-2">
+                  {biomarkerEntries.map(({ key, name, value, unit, colorClass }) => (
+                    <div
+                      key={key}
+                      className="flex justify-between items-center text-sm"
+                    >
+                      <span className="text-zinc-600 dark:text-zinc-400">
+                        {name}
+                      </span>
+                      <span className={`font-medium ${colorClass}`}>
+                        {value} {unit}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-zinc-500 dark:text-zinc-400">No data</p>
+              )}
             </CardContent>
           </Card>
 
@@ -70,9 +155,26 @@ export default function Home() {
               <CardDescription>Body composition analysis</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-zinc-500 dark:text-zinc-400">
-                No data loaded
-              </p>
+              {bodyCompEntries.length > 0 ? (
+                <div className="space-y-2">
+                  {bodyCompEntries.map(({ key, name, value, unit, colorClass }) => (
+                    <div
+                      key={key}
+                      className="flex justify-between items-center text-sm"
+                    >
+                      <span className="text-zinc-600 dark:text-zinc-400">
+                        {name}
+                      </span>
+                      <span className={`font-medium ${colorClass}`}>
+                        {value}
+                        {unit && ` ${unit}`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-zinc-500 dark:text-zinc-400">No data</p>
+              )}
             </CardContent>
           </Card>
 
@@ -80,12 +182,39 @@ export default function Home() {
           <Card>
             <CardHeader>
               <CardTitle>Activity</CardTitle>
-              <CardDescription>HRV, sleep, and recovery</CardDescription>
+              <CardDescription>HRV, sleep, and recovery (7-day avg)</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-zinc-500 dark:text-zinc-400">
-                No data loaded
-              </p>
+              {activityAvg ? (
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-zinc-600 dark:text-zinc-400">
+                      HRV
+                    </span>
+                    <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                      {activityAvg.hrv.toFixed(1)} ms
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-zinc-600 dark:text-zinc-400">
+                      Resting HR
+                    </span>
+                    <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                      {activityAvg.rhr.toFixed(1)} bpm
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-zinc-600 dark:text-zinc-400">
+                      Sleep
+                    </span>
+                    <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                      {activityAvg.sleep.toFixed(1)} hrs
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-zinc-500 dark:text-zinc-400">No data</p>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -124,4 +253,11 @@ export default function Home() {
       </div>
     </div>
   );
+}
+
+function formatKey(key: string): string {
+  return key
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/^./, (str) => str.toUpperCase())
+    .trim();
 }

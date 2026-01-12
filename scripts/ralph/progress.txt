@@ -211,3 +211,29 @@
 
 **Verified:**
 - [x] typecheck passes
+
+---
+## 2024-01-12 - US-010: Dashboard data integration
+
+**Implemented:**
+- src/lib/types/health.ts with reference ranges and status functions
+- Dashboard loads real data from HealthDataStore
+- Header shows chronological age, biological age, and delta (color-coded)
+- Blood Work card displays all biomarkers with color-coded status
+- DEXA card shows body composition metrics
+- Activity card shows 7-day averages for HRV, RHR, sleep
+- Graceful "No data" display when data missing
+
+**Files created:**
+- src/lib/types/health.ts
+
+**Files modified:**
+- src/app/page.tsx
+
+**Learnings:**
+- Reference ranges from HEALTH_KNOWLEDGE.md encoded as constants
+- Status logic: check optimal first, then normal, then borderline (10% buffer)
+- Color classes: green for optimal/normal, yellow for borderline, red for out of range
+
+**Verified:**
+- [x] typecheck passes

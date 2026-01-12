@@ -168,7 +168,7 @@
         "typecheck passes"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "notes": "Reference ranges in docs/HEALTH_KNOWLEDGE.md. Server component can call HealthDataStore directly."
     },
     {
