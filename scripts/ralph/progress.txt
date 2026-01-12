@@ -1,0 +1,127 @@
+# HealthAI Build Progress
+
+## Codebase Patterns
+
+<!-- Ralph adds reusable patterns here as discovered -->
+
+---
+
+## Build Log
+
+<!-- Ralph appends completed stories below -->
+
+---
+## 2024-01-12 - US-016: Sample data files
+
+**Implemented:**
+- Created data/sample-bloodwork.txt with all 9 Levine PhenoAge biomarkers + lipid panel + additional markers
+- Created data/sample-dexa.txt with body composition, visceral fat, bone density, ALMI
+- Created data/sample-whoop.csv with 7 days of HRV, RHR, sleep data
+
+**Files created:**
+- data/sample-bloodwork.txt
+- data/sample-dexa.txt
+- data/sample-whoop.csv
+
+**Learnings:**
+- Bloodwork format: "Biomarker: value unit (Reference: range)" is easy to parse with regex
+- DEXA includes multiple T-scores (lumbar, hip, whole body)
+- Whoop CSV uses snake_case headers: date,hrv_ms,rhr_bpm,sleep_hours,sleep_score,strain
+
+**Verified:**
+- [x] All files exist in /data folder
+- [x] Bloodwork contains all 9 PhenoAge inputs: albumin, creatinine, glucose, CRP, lymphocyte %, MCV, RDW, ALP, WBC
+- [x] Values realistic for healthy 35-year-old
+
+---
+## 2024-01-12 - US-001: Project scaffolding
+
+**Implemented:**
+- Next.js 16 app with App Router and src directory
+- Tailwind CSS v4 configured
+- shadcn/ui initialized with components.json
+- TypeScript strict mode enabled
+- Added typecheck script to package.json
+
+**Files created:**
+- src/app/page.tsx, layout.tsx, globals.css
+- src/lib/utils.ts (shadcn)
+- tsconfig.json, next.config.ts, postcss.config.mjs
+- components.json (shadcn config)
+- package.json with scripts
+
+**Learnings:**
+- Next.js 16 now uses Turbopack by default
+- Tailwind v4 uses different config format (postcss.config.mjs)
+- Need to reinstall node_modules after copying from subdirectory (broken symlinks)
+
+**Verified:**
+- [x] typecheck passes
+- [x] dev server runs (HTTP 200)
+- [x] localhost:3000 shows default Next.js page
+
+---
+## 2024-01-12 - US-002: Data folder structure and file detection
+
+**Implemented:**
+- src/lib/files.ts with getDataFiles() function
+- Returns array of {name, type, path, extension} for files in /data
+- Type detection based on filename patterns (bloodwork, dexa, activity)
+- Supports .txt, .csv, .xlsx extensions
+- Console logs detected files on startup
+
+**Files created:**
+- src/lib/files.ts
+
+**Learnings:**
+- Pattern: Use filename includes() for type detection (blood/lab/metabolic -> bloodwork)
+- Return 'unknown' type for unrecognized files
+- Log format: "[HealthAI] Detected data files: [...]"
+
+**Verified:**
+- [x] typecheck passes
+- [x] Console logs: sample-bloodwork.txt (bloodwork), sample-dexa.txt (dexa), sample-whoop.csv (activity)
+
+---
+## 2024-01-12 - US-003: Text file parsing
+
+**Implemented:**
+- src/lib/parsers/text.ts with parseTextFile(path) function
+- Uses fs.readFileSync with utf-8 encoding
+- Returns empty string and logs error on failure
+
+**Files created:**
+- src/lib/parsers/text.ts
+
+**Verified:**
+- [x] typecheck passes
+
+---
+## 2024-01-12 - US-004: CSV parsing
+
+**Implemented:**
+- Installed papaparse and @types/papaparse
+- src/lib/parsers/csv.ts with parseCsv(path) function
+- Uses Papa.parse with header: true, dynamicTyping: true
+- Returns array of objects with column names as keys
+
+**Files created:**
+- src/lib/parsers/csv.ts
+
+**Verified:**
+- [x] typecheck passes
+
+---
+## 2024-01-12 - US-005: XLSX parsing
+
+**Implemented:**
+- Installed xlsx package
+- src/lib/parsers/xlsx.ts with parseXlsx(path) function
+- Returns array of {name, data} per sheet
+- Uses XLSX.utils.sheet_to_json for conversion
+
+**Files created:**
+- src/lib/parsers/xlsx.ts
+
+**Verified:**
+- [x] typecheck passes

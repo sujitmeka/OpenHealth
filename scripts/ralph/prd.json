@@ -1,0 +1,256 @@
+{
+  "branchName": "main",
+  "projectName": "healthai",
+  "userStories": [
+    {
+      "id": "US-016",
+      "title": "Sample data files",
+      "acceptanceCriteria": [
+        "data/sample-bloodwork.txt exists with realistic mock lab values",
+        "data/sample-dexa.txt exists with body composition data",
+        "data/sample-whoop.csv exists with 7 days of HRV, RHR, sleep data",
+        "Bloodwork includes ALL 9 Levine PhenoAge biomarkers",
+        "Data values are realistic for a healthy 35-year-old"
+      ],
+      "priority": 0,
+      "passes": true,
+      "notes": "Create as .txt files (not PDF) for V1 simplicity. Bloodwork must include: albumin (4.5 g/dL), creatinine (0.9 mg/dL), glucose (85 mg/dL), CRP (0.5 mg/L), lymphocyte % (30%), MCV (88 fL), RDW (12.5%), alkaline phosphatase (50 U/L), WBC (5.5). Also include: LDL (95), HDL (62), triglycerides (80), vitamin D (45). DEXA: body fat % (18%), lean mass (145 lbs), bone density (T-score 0.5), visceral fat (0.8 lbs). Whoop CSV columns: date,hrv_ms,rhr_bpm,sleep_hours,sleep_score,strain"
+    },
+    {
+      "id": "US-001",
+      "title": "Project scaffolding",
+      "acceptanceCriteria": [
+        "Next.js 15 app created with App Router",
+        "Tailwind CSS configured",
+        "shadcn/ui initialized",
+        "TypeScript strict mode enabled",
+        "npm run dev starts without errors",
+        "localhost:3000 shows default page"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "Use: npx create-next-app@latest --typescript --tailwind --app. Then: npx shadcn@latest init"
+    },
+    {
+      "id": "US-002",
+      "title": "Data folder structure and file detection",
+      "acceptanceCriteria": [
+        "/data folder exists in project root",
+        "lib/files.ts exports getDataFiles() function",
+        "getDataFiles() returns array of {name, type, path} for files in /data",
+        "Detects .txt, .csv, .xlsx file types",
+        "Console logs detected files on app startup",
+        "typecheck passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "Use fs module. File extension determines type. Type can be 'bloodwork', 'dexa', 'activity' based on filename pattern or extension."
+    },
+    {
+      "id": "US-003",
+      "title": "Text file parsing",
+      "acceptanceCriteria": [
+        "lib/parsers/text.ts exports parseTextFile(path) function",
+        "Returns string of file contents",
+        "Works with sample-bloodwork.txt in /data",
+        "Handles errors gracefully (returns empty string + logs error)",
+        "typecheck passes"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "Simple fs.readFileSync for .txt files. Foundation for biomarker extraction."
+    },
+    {
+      "id": "US-004",
+      "title": "CSV parsing",
+      "acceptanceCriteria": [
+        "papaparse package installed",
+        "lib/parsers/csv.ts exports parseCsv(path) function",
+        "Returns array of objects (header row becomes keys)",
+        "Works with sample-whoop.csv in /data",
+        "Handles errors gracefully",
+        "typecheck passes"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "npm install papaparse @types/papaparse"
+    },
+    {
+      "id": "US-005",
+      "title": "XLSX parsing",
+      "acceptanceCriteria": [
+        "xlsx package installed",
+        "lib/parsers/xlsx.ts exports parseXlsx(path) function",
+        "Returns array of objects per sheet",
+        "Handles errors gracefully",
+        "typecheck passes"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "npm install xlsx. This is for future use; sample data uses .txt and .csv"
+    },
+    {
+      "id": "US-006",
+      "title": "Biomarker extraction from text",
+      "acceptanceCriteria": [
+        "lib/extractors/biomarkers.ts exports extractBiomarkers(text) function",
+        "Returns object with found biomarkers: {glucose?: number, albumin?: number, ...}",
+        "Extracts all 9 Levine PhenoAge inputs: glucose, creatinine, albumin, crp, lymphocytePercent, mcv, rdw, alkalinePhosphatase, wbc",
+        "Also extracts: ldl, hdl, triglycerides, vitaminD",
+        "Works with sample-bloodwork.txt format",
+        "typecheck passes"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "Use regex patterns to find biomarker names followed by values. Handle variations like 'Albumin: 4.5' or 'Albumin 4.5 g/dL'. See HEALTH_KNOWLEDGE.md for biomarker list."
+    },
+    {
+      "id": "US-007",
+      "title": "Levine PhenoAge calculation",
+      "acceptanceCriteria": [
+        "lib/calculations/phenoage.ts exports calculatePhenoAge(biomarkers, chronologicalAge) function",
+        "Implements Levine PhenoAge formula exactly as specified in HEALTH_KNOWLEDGE.md",
+        "Returns {phenoAge: number, delta: number} or null if missing required biomarkers",
+        "delta = phenoAge - chronologicalAge (negative means biologically younger)",
+        "Handles edge case: CRP <= 0 uses 0.01",
+        "Works with sample data producing reasonable result (phenoAge ~31-33 for age 35 healthy inputs)",
+        "typecheck passes"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "Formula in docs/HEALTH_KNOWLEDGE.md. Three steps: calculate xb, calculate m, calculate PhenoAge. Use Math.log for natural log. Round to 1 decimal."
+    },
+    {
+      "id": "US-008",
+      "title": "Health data store",
+      "acceptanceCriteria": [
+        "lib/store/health-data.ts exports HealthDataStore class or singleton object",
+        "Methods: loadAllData(), getBiomarkers(), getBodyComp(), getActivity(), getPhenoAge(), getHealthSummary()",
+        "loadAllData() scans /data folder, parses files by type, extracts biomarkers, calculates phenoage",
+        "getHealthSummary() returns text summary for agent context",
+        "Data stored in memory (no database)",
+        "Singleton pattern for app-wide access",
+        "typecheck passes"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": "Coordinate parsers and extractors. Body comp from sample-dexa.txt, activity from sample-whoop.csv, biomarkers from sample-bloodwork.txt"
+    },
+    {
+      "id": "US-009",
+      "title": "Dashboard layout shell",
+      "acceptanceCriteria": [
+        "app/page.tsx renders dashboard layout",
+        "Header section with placeholder for age values",
+        "3-column grid for Blood Work, DEXA, Activity cards",
+        "Areas to Improve section below cards",
+        "Chat section at bottom",
+        "Responsive design (stacks on mobile)",
+        "Uses shadcn/ui Card components",
+        "localhost:3000 shows layout structure",
+        "typecheck passes"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": "npx shadcn@latest add card. Use Tailwind grid. Placeholder text is fine for this story."
+    },
+    {
+      "id": "US-010",
+      "title": "Dashboard data integration",
+      "acceptanceCriteria": [
+        "Dashboard loads real data from HealthDataStore on page load",
+        "Header shows chronological age, biological age (PhenoAge), and delta",
+        "Blood Work card shows extracted biomarkers with values and units",
+        "Biomarkers color-coded: green (optimal), yellow (borderline), red (out of range)",
+        "DEXA card shows body fat %, lean mass, bone density, visceral fat",
+        "Activity card shows HRV, RHR, sleep hours (latest or average from CSV)",
+        "Shows 'No data' gracefully if a section has no data",
+        "typecheck passes"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": "Reference ranges in docs/HEALTH_KNOWLEDGE.md. Server component can call HealthDataStore directly."
+    },
+    {
+      "id": "US-011",
+      "title": "Areas to Improve logic",
+      "acceptanceCriteria": [
+        "lib/analysis/improvements.ts exports getImprovements(healthData) function",
+        "Returns array of {biomarker, currentValue, unit, targetValue, status, recommendation}",
+        "Identifies biomarkers outside optimal range (not just normal range)",
+        "Provides basic recommendations from HEALTH_KNOWLEDGE.md",
+        "Dashboard renders improvements in Areas to Improve section",
+        "Shows encouraging message if all biomarkers optimal",
+        "typecheck passes"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": "Compare against 'optimal' column in HEALTH_KNOWLEDGE.md reference ranges, not just 'normal'. Common improvements: vitamin D, LDL, glucose."
+    },
+    {
+      "id": "US-012",
+      "title": "Claude Agent SDK setup",
+      "acceptanceCriteria": [
+        "@anthropic-ai/claude-agent-sdk package installed",
+        "lib/agent/health-agent.ts exports createHealthAgent() and queryHealthAgent(message, healthContext) functions",
+        "Agent configured with health-focused system prompt",
+        "System prompt includes: role, reference ranges, verified sources list, response guidelines",
+        "Allowed tools: Read, Bash, WebSearch, WebFetch",
+        "queryHealthAgent accepts message string and health data context, returns agent response",
+        "typecheck passes"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": "npm install @anthropic-ai/claude-agent-sdk. System prompt content from docs/HEALTH_KNOWLEDGE.md. Include disclaimer about not being medical advice."
+    },
+    {
+      "id": "US-013",
+      "title": "Chat API route",
+      "acceptanceCriteria": [
+        "app/api/chat/route.ts handles POST requests",
+        "Accepts JSON body: { message: string }",
+        "Loads health data from HealthDataStore",
+        "Calls queryHealthAgent with message and health summary context",
+        "Returns JSON: { response: string }",
+        "Handles errors with proper status codes (400 for bad input, 500 for agent errors)",
+        "typecheck passes"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": "Health context = getHealthSummary() prepended to give agent awareness of user's data"
+    },
+    {
+      "id": "US-014",
+      "title": "Chat UI component",
+      "acceptanceCriteria": [
+        "components/Chat.tsx renders chat interface",
+        "Text input field with send button",
+        "Displays message history (alternating user and agent messages)",
+        "Shows loading indicator while agent is responding",
+        "Auto-scrolls to latest message",
+        "Integrated into dashboard layout (bottom section)",
+        "Can send a message and receive agent response",
+        "Handles errors gracefully (shows error message in chat)",
+        "typecheck passes"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": "Use React state for messages array. Fetch to /api/chat. Consider npx shadcn@latest add input button for styled components."
+    },
+    {
+      "id": "US-015",
+      "title": "Data sync on startup and manual resync",
+      "acceptanceCriteria": [
+        "App automatically calls loadAllData() on startup/page load",
+        "Sync Data button visible in dashboard header",
+        "Clicking button re-scans /data folder and refreshes all dashboard data",
+        "Shows loading indicator during sync",
+        "Shows success toast or notification when sync completes",
+        "typecheck passes"
+      ],
+      "priority": 15,
+      "passes": false,
+      "notes": "npx shadcn@latest add button sonner (for toast). May need API route for resync or server action."
+    }
+  ]
+}
