@@ -284,3 +284,25 @@
 
 **Verified:**
 - [x] typecheck passes
+
+---
+## 2024-01-12 - US-013: Chat API route
+
+**Implemented:**
+- Created app/api/chat/route.ts with POST handler
+- Accepts JSON body { message: string }
+- Validates message (required, non-empty string)
+- Loads health context from HealthDataStore.getHealthSummary()
+- Calls queryHealthAgent with message and context
+- Returns { response: string } on success
+- Error handling: 400 for bad input, 500 for agent errors
+
+**Files created:**
+- src/app/api/chat/route.ts
+
+**Learnings:**
+- Next.js App Router uses route.ts with exported HTTP method functions
+- Use NextRequest/NextResponse for typed request/response
+
+**Verified:**
+- [x] typecheck passes
