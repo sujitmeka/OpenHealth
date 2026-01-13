@@ -32,7 +32,7 @@
         "typecheck passes"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "Start simple. Test with a Box mesh first to verify setup works."
     },
     {

@@ -406,3 +406,31 @@ All 16 user stories have been implemented:
 **Verified:**
 - [x] typecheck passes
 - [x] dev server runs without errors
+
+---
+## 2025-01-13 - DT-002: Basic Three.js canvas component
+
+**Implemented:**
+- Created src/components/digital-twin/TwinCanvas.tsx
+- Canvas with soft gray gradient background (CSS linear gradient)
+- Three-point lighting: ambient (0.6), directional main (0.8), rim light (0.3)
+- OrbitControls with pan disabled, zoom limited, angle constrained
+- Camera at [0, 1.5, 4] looking at [0, 1, 0] for human-height view
+- Test box mesh for verification
+- Semi-transparent ground plane
+
+**Files created:**
+- src/components/digital-twin/TwinCanvas.tsx
+- src/app/twin-test/page.tsx (test page)
+
+**Three.js learnings:**
+- Canvas component needs explicit dimensions (parent container or CSS)
+- OrbitControls target sets the focal point for rotation
+- minPolarAngle/maxPolarAngle constrains vertical rotation
+- Shadow rendering requires castShadow on lights and receiveShadow on meshes
+
+**Verified:**
+- [x] typecheck passes
+- [x] renders in browser at /twin-test
+- [x] gray gradient background visible
+- [x] test box renders with proper lighting
