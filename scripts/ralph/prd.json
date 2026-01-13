@@ -277,7 +277,7 @@
         "typecheck passes"
       ],
       "priority": 17,
-      "passes": false,
+      "passes": true,
       "notes": "useThree hook gives access to raycaster. onClick on mesh, show Html tooltip. drei has Html component."
     },
     {

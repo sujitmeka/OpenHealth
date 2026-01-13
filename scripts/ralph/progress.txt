@@ -847,3 +847,40 @@ body.rotation.y = swayCycle * 0.01;
 
 **Verified:**
 - [x] typecheck passes
+
+---
+## 2025-01-13 - DT-017: Click body region for details
+
+**Implemented:**
+- Created src/lib/digital-twin/regions.ts for region data mapping
+- REGION_INFO maps areas to labels and descriptions
+- getRegionHealthData() returns health metrics for region
+- Added RegionTooltip component in DigitalTwin.tsx
+- onRegionClick prop added to ProceduralHuman
+- onClick handlers on all clickable meshes
+- Tooltip shows at bottom of canvas with close button
+
+**Clickable regions:**
+- head, torso-core
+- left/right-shoulder, left/right-elbow
+- left/right-hip, left/right-knee
+
+**Region to health data mapping:**
+- torso-core → visceral fat, body fat %
+- joints → CRP (inflammation)
+- head → glucose
+
+**Files created:**
+- src/lib/digital-twin/regions.ts
+
+**Files modified:**
+- src/components/digital-twin/DigitalTwin.tsx
+- src/components/digital-twin/ProceduralHuman.tsx
+
+**React Three Fiber learnings:**
+- onClick on mesh handles raycasting automatically
+- Lift state to parent component for tooltip display
+- useCallback for stable handler references
+
+**Verified:**
+- [x] typecheck passes

@@ -34,6 +34,7 @@ function getMaterialProps(
 interface ProceduralHumanProps {
   position?: [number, number, number];
   bodyState?: BodyState;
+  onRegionClick?: (area: HighlightArea) => void;
 }
 
 interface HeadProps {
@@ -73,21 +74,22 @@ function Neck({ rotationX = 0, vitalityColor = DEFAULT_BODY_COLOR }: NeckProps):
 interface TorsoProps {
   highlights?: HighlightRegion[];
   vitalityColor?: string;
+  onClick?: () => void;
 }
 
-function Torso({ highlights = [], vitalityColor = DEFAULT_BODY_COLOR }: TorsoProps): React.JSX.Element {
+function Torso({ highlights = [], vitalityColor = DEFAULT_BODY_COLOR, onClick }: TorsoProps): React.JSX.Element {
   const torsoMaterial = getMaterialProps(highlights, 'torso-core', vitalityColor);
 
   return (
     <group position={[0, -0.15, 0]}>
       {/* Upper torso (chest) - wider capsule */}
-      <mesh position={[0, 0.15, 0]} castShadow>
+      <mesh position={[0, 0.15, 0]} castShadow onClick={onClick}>
         <capsuleGeometry args={[0.14, 0.25, 8, 16]} />
         <meshStandardMaterial {...torsoMaterial} />
       </mesh>
 
       {/* Lower torso (abdomen) - slightly narrower */}
-      <mesh position={[0, -0.15, 0]} castShadow>
+      <mesh position={[0, -0.15, 0]} castShadow onClick={onClick}>
         <capsuleGeometry args={[0.12, 0.15, 8, 16]} />
         <meshStandardMaterial {...torsoMaterial} />
       </mesh>
@@ -106,9 +108,11 @@ interface LegProps {
   side: 'left' | 'right';
   highlights?: HighlightRegion[];
   vitalityColor?: string;
+  onHipClick?: () => void;
+  onKneeClick?: () => void;
 }
 
-function Leg({ side, highlights = [], vitalityColor = DEFAULT_BODY_COLOR }: LegProps): React.JSX.Element {
+function Leg({ side, highlights = [], vitalityColor = DEFAULT_BODY_COLOR, onHipClick, onKneeClick }: LegProps): React.JSX.Element {
   const xSign = side === 'left' ? -1 : 1;
   const hipX = xSign * 0.08;
 
@@ -121,7 +125,7 @@ function Leg({ side, highlights = [], vitalityColor = DEFAULT_BODY_COLOR }: LegP
   return (
     <group position={[hipX, -0.4, 0]}>
       {/* Hip joint */}
-      <mesh castShadow>
+      <mesh castShadow onClick={onHipClick}>
         <sphereGeometry args={[0.055, 16, 16]} />
         <meshStandardMaterial {...hipMaterial} />
       </mesh>
@@ -135,7 +139,7 @@ function Leg({ side, highlights = [], vitalityColor = DEFAULT_BODY_COLOR }: LegP
 
         {/* Knee joint */}
         <group position={[0, -0.42, 0]}>
-          <mesh castShadow>
+          <mesh castShadow onClick={onKneeClick}>
             <sphereGeometry args={[0.045, 16, 16]} />
             <meshStandardMaterial {...kneeMaterial} />
           </mesh>
@@ -214,6 +218,7 @@ function Arm({ side, shoulderRotationZ = 0, highlights = [], vitalityColor = DEF
 export function ProceduralHuman({
   position = [0, 0, 0],
   bodyState = DEFAULT_BODY_STATE,
+  onRegionClick,
 }: ProceduralHumanProps): React.JSX.Element {
   const groupRef = useRef<Group>(null);
   const spineRef = useRef<Group>(null);
@@ -328,7 +333,7 @@ export function ProceduralHuman({
           {/* Head & Neck */}
           <group position={[0, 0.5, 0]}>
             <group ref={headRef} position={[0, 0.35, 0]}>
-              <mesh castShadow>
+              <mesh castShadow onClick={() => onRegionClick?.('head')}>
                 <sphereGeometry args={[0.12, 32, 32]} />
                 <meshStandardMaterial color={currentVitalityColor} />
               </mesh>
@@ -343,12 +348,12 @@ export function ProceduralHuman({
 
           {/* Torso with highlights and vitality - wrapped for breathing animation */}
           <group ref={torsoRef}>
-            <Torso highlights={highlights} vitalityColor={currentVitalityColor} />
+            <Torso highlights={highlights} vitalityColor={currentVitalityColor} onClick={() => onRegionClick?.('torso-core')} />
           </group>
 
           {/* Arms with animated shoulder rotation */}
           <group position={[-0.2, 0.25, 0]}>
-            <mesh castShadow>
+            <mesh castShadow onClick={() => onRegionClick?.('left-shoulder')}>
               <sphereGeometry args={[0.045, 16, 16]} />
               <meshStandardMaterial {...getMaterialProps(highlights, 'left-shoulder', currentVitalityColor)} />
             </mesh>
@@ -358,7 +363,7 @@ export function ProceduralHuman({
                 <meshStandardMaterial color={currentVitalityColor} />
               </mesh>
               <group position={[0, -0.3, 0]}>
-                <mesh castShadow>
+                <mesh castShadow onClick={() => onRegionClick?.('left-elbow')}>
                   <sphereGeometry args={[0.035, 16, 16]} />
                   <meshStandardMaterial {...getMaterialProps(highlights, 'left-elbow', currentVitalityColor)} />
                 </mesh>
@@ -375,7 +380,7 @@ export function ProceduralHuman({
           </group>
 
           <group position={[0.2, 0.25, 0]}>
-            <mesh castShadow>
+            <mesh castShadow onClick={() => onRegionClick?.('right-shoulder')}>
               <sphereGeometry args={[0.045, 16, 16]} />
               <meshStandardMaterial {...getMaterialProps(highlights, 'right-shoulder', currentVitalityColor)} />
             </mesh>
@@ -385,7 +390,7 @@ export function ProceduralHuman({
                 <meshStandardMaterial color={currentVitalityColor} />
               </mesh>
               <group position={[0, -0.3, 0]}>
-                <mesh castShadow>
+                <mesh castShadow onClick={() => onRegionClick?.('right-elbow')}>
                   <sphereGeometry args={[0.035, 16, 16]} />
                   <meshStandardMaterial {...getMaterialProps(highlights, 'right-elbow', currentVitalityColor)} />
                 </mesh>
@@ -403,8 +408,20 @@ export function ProceduralHuman({
         </group>
 
         {/* Legs with highlights and vitality */}
-        <Leg side="left" highlights={highlights} vitalityColor={currentVitalityColor} />
-        <Leg side="right" highlights={highlights} vitalityColor={currentVitalityColor} />
+        <Leg
+          side="left"
+          highlights={highlights}
+          vitalityColor={currentVitalityColor}
+          onHipClick={() => onRegionClick?.('left-hip')}
+          onKneeClick={() => onRegionClick?.('left-knee')}
+        />
+        <Leg
+          side="right"
+          highlights={highlights}
+          vitalityColor={currentVitalityColor}
+          onHipClick={() => onRegionClick?.('right-hip')}
+          onKneeClick={() => onRegionClick?.('right-knee')}
+        />
       </group>
     </group>
   );

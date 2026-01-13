@@ -1,11 +1,12 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { TwinCanvas } from './TwinCanvas';
 import { ProceduralHuman } from './ProceduralHuman';
 import { HealthDataStore } from '@/lib/store/health-data';
 import { mapHealthToBodyState, HealthDataInput } from '@/lib/digital-twin/mapper';
-import { BodyState, DEFAULT_BODY_STATE } from '@/lib/digital-twin/types';
+import { BodyState, DEFAULT_BODY_STATE, HighlightArea } from '@/lib/digital-twin/types';
+import { getRegionHealthData, RegionHealthData } from '@/lib/digital-twin/regions';
 
 interface DigitalTwinProps {
   className?: string;
@@ -30,6 +31,56 @@ function getOverallStatus(energyLevel: number): { label: string; color: string }
 interface StatusOverlayProps {
   energyLevel: number;
   highlightCount: number;
+}
+
+interface RegionTooltipProps {
+  data: RegionHealthData;
+  onClose: () => void;
+}
+
+function RegionTooltip({ data, onClose }: RegionTooltipProps): React.JSX.Element {
+  return (
+    <div className="absolute bottom-3 left-3 right-3 bg-white/95 dark:bg-zinc-900/95 rounded-lg p-4 shadow-lg backdrop-blur-sm">
+      <div className="flex justify-between items-start mb-2">
+        <div>
+          <div className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+            {data.label}
+          </div>
+          <div className="text-xs text-zinc-500 dark:text-zinc-400">
+            {data.description}
+          </div>
+        </div>
+        <button
+          onClick={onClose}
+          className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
+          aria-label="Close tooltip"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+          </svg>
+        </button>
+      </div>
+
+      <div className="space-y-1.5">
+        {data.metrics.map((metric, i) => (
+          <div key={i} className="flex justify-between items-center text-sm">
+            <span className="text-zinc-600 dark:text-zinc-400">{metric.name}</span>
+            <span
+              className={`font-medium ${
+                metric.status === 'critical'
+                  ? 'text-red-600 dark:text-red-400'
+                  : metric.status === 'warning'
+                    ? 'text-yellow-600 dark:text-yellow-400'
+                    : 'text-zinc-800 dark:text-zinc-200'
+              }`}
+            >
+              {metric.value}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function StatusOverlay({ energyLevel, highlightCount }: StatusOverlayProps): React.JSX.Element {
@@ -76,15 +127,21 @@ function StatusOverlay({ energyLevel, highlightCount }: StatusOverlayProps): Rea
  * and renders the ProceduralHuman with the calculated state.
  */
 export function DigitalTwin({ className }: DigitalTwinProps): React.JSX.Element {
-  // Get health data from store and map to body state
+  // State for selected region tooltip
+  const [selectedRegion, setSelectedRegion] = useState<RegionHealthData | null>(null);
+
+  // Get health data from store
+  const healthData = useMemo(() => {
+    return {
+      biomarkers: HealthDataStore.getBiomarkers(),
+      bodyComp: HealthDataStore.getBodyComp(),
+      activity: HealthDataStore.getActivity(),
+    };
+  }, []);
+
+  // Map to body state
   const bodyState: BodyState = useMemo(() => {
     try {
-      const healthData: HealthDataInput = {
-        biomarkers: HealthDataStore.getBiomarkers(),
-        bodyComp: HealthDataStore.getBodyComp(),
-        activity: HealthDataStore.getActivity(),
-      };
-
       const state = mapHealthToBodyState(healthData);
 
       // Console log for debugging (acceptance criteria requirement)
@@ -96,17 +153,35 @@ export function DigitalTwin({ className }: DigitalTwinProps): React.JSX.Element 
       console.error('[DigitalTwin] Error mapping health data:', error);
       return DEFAULT_BODY_STATE;
     }
+  }, [healthData]);
+
+  // Handle region click
+  const handleRegionClick = useCallback(
+    (area: HighlightArea) => {
+      const regionData = getRegionHealthData(area, healthData.biomarkers, healthData.bodyComp);
+      setSelectedRegion(regionData);
+      console.log('[DigitalTwin] Region clicked:', area, regionData);
+    },
+    [healthData]
+  );
+
+  // Close tooltip
+  const handleCloseTooltip = useCallback(() => {
+    setSelectedRegion(null);
   }, []);
 
   return (
     <div className={`relative ${className ?? ''}`}>
       <TwinCanvas>
-        <ProceduralHuman bodyState={bodyState} />
+        <ProceduralHuman bodyState={bodyState} onRegionClick={handleRegionClick} />
       </TwinCanvas>
       <StatusOverlay
         energyLevel={bodyState.energyLevel}
         highlightCount={bodyState.highlights.length}
       />
+      {selectedRegion && (
+        <RegionTooltip data={selectedRegion} onClose={handleCloseTooltip} />
+      )}
     </div>
   );
 }
