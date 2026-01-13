@@ -814,3 +814,36 @@ body.rotation.y = swayCycle * 0.01;
 
 **Verified:**
 - [x] typecheck passes
+
+---
+## 2025-01-13 - DT-016: Status indicators overlay
+
+**Implemented:**
+- Added StatusOverlay component in DigitalTwin.tsx
+- getOverallStatus() maps energy to Optimal/Good/Fair/Needs Attention
+- Shows energy level as percentage with visual bar
+- Shows highlighted areas count (areas of concern)
+- Positioned top-left corner with absolute positioning
+- Glass-morphism style: bg-white/90 backdrop-blur-sm
+
+**Status thresholds:**
+- >= 75: Optimal (green)
+- >= 55: Good (blue)
+- >= 35: Fair (yellow)
+- < 35: Needs Attention (red)
+
+**Overlay elements:**
+- Status label with color coding
+- Energy percentage
+- Visual progress bar (gradient green)
+- Areas of concern count (if > 0)
+
+**Files modified:**
+- src/components/digital-twin/DigitalTwin.tsx
+
+**CSS learnings:**
+- backdrop-blur-sm for glass effect
+- transition-all duration-500 for smooth bar animation
+
+**Verified:**
+- [x] typecheck passes
