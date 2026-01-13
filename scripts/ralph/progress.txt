@@ -434,3 +434,28 @@ All 16 user stories have been implemented:
 - [x] renders in browser at /twin-test
 - [x] gray gradient background visible
 - [x] test box renders with proper lighting
+
+---
+## 2025-01-13 - DT-003: Procedural human body - torso and head
+
+**Implemented:**
+- Created src/components/digital-twin/ProceduralHuman.tsx
+- Head as SphereGeometry (radius 0.12)
+- Neck as CylinderGeometry connecting head to torso
+- Torso as two CapsuleGeometry parts (chest + abdomen)
+- Light gray material (#f0f0f0) for mannequin look
+- Body positioned so feet will be at Y=0
+- castShadow enabled on all meshes
+
+**Files created:**
+- src/components/digital-twin/ProceduralHuman.tsx
+
+**Three.js learnings:**
+- CapsuleGeometry args: [radius, length, capSegments, radialSegments]
+- Use nested groups for hierarchical body parts
+- Position offset (bodyOffset) used to ground the figure
+
+**Verified:**
+- [x] typecheck passes
+- [x] renders in browser
+- [x] head, neck, torso visible with proper proportions
