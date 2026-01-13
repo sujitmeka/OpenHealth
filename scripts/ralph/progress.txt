@@ -661,3 +661,27 @@ All 16 user stories have been implemented:
 
 **Verified:**
 - [x] typecheck passes
+
+---
+## 2025-01-13 - DT-011: Wire digital twin to health data
+
+**Implemented:**
+- Created src/components/digital-twin/DigitalTwin.tsx
+- Main wrapper that connects HealthDataStore to ProceduralHuman
+- Uses useMemo to compute bodyState from health data
+- Calls mapHealthToBodyState with biomarkers, bodyComp, activity
+- Console logs health input and mapped state for debugging
+- Falls back to DEFAULT_BODY_STATE on error
+
+**Data flow:**
+HealthDataStore → HealthDataInput → mapHealthToBodyState → BodyState → ProceduralHuman
+
+**Files created:**
+- src/components/digital-twin/DigitalTwin.tsx
+
+**Learnings:**
+- useMemo for expensive computations that don't change often
+- Error handling with fallback state for robustness
+
+**Verified:**
+- [x] typecheck passes

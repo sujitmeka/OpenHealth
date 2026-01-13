@@ -183,7 +183,7 @@
         "typecheck passes"
       ],
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "notes": "This connects everything. Health data → mapper → BodyState → ProceduralHuman renders it."
     },
     {
