@@ -215,7 +215,7 @@
         "typecheck passes"
       ],
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "notes": "Store target values in state, lerp current toward target in useFrame. THREE.MathUtils.lerp(current, target, delta * speed)"
     },
     {

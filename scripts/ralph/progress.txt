@@ -713,3 +713,42 @@ HealthDataStore → HealthDataInput → mapHealthToBodyState → BodyState → P
 
 **Verified:**
 - [x] typecheck passes
+
+---
+## 2025-01-13 - DT-013: Smooth animation transitions
+
+**Implemented:**
+- Created src/lib/digital-twin/animation.ts
+- lerpValue() - smooth number interpolation using exponential decay
+- lerpPosture() - animate all posture rotations together
+- lerpColor() - smooth Three.js Color interpolation
+- AnimatedPosture interface for type-safe animation state
+- ANIMATION_SPEED constant (2.0) for ~0.5-1 second transitions
+
+**Changes to ProceduralHuman:**
+- Added refs for spine, head, neck, leftArm, rightArm groups
+- useFrame hook to lerp posture rotations each frame
+- Animate vitality color with batched state updates (threshold > 1000)
+- Direct ref manipulation for smooth rotation (no re-renders)
+- Inline head/neck/arm JSX for ref access
+- useEffect for debugging logs (not every frame)
+
+**Animation formula:**
+```
+newValue = lerp(current, target, 1 - exp(-speed * delta))
+```
+This gives exponential easing toward target.
+
+**Files created:**
+- src/lib/digital-twin/animation.ts
+
+**Files modified:**
+- src/components/digital-twin/ProceduralHuman.tsx
+
+**Three.js learnings:**
+- MathUtils.lerp for numbers, Color.lerp for colors
+- Manipulate refs directly in useFrame, avoid setState for rotations
+- Use delta time for framerate-independent animation
+
+**Verified:**
+- [x] typecheck passes

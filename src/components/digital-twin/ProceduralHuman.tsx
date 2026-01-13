@@ -1,11 +1,18 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Group } from 'three';
+import { useFrame } from '@react-three/fiber';
 import { BodyState, DEFAULT_BODY_STATE, HighlightRegion, HighlightArea } from '@/lib/digital-twin/types';
 import { getPostureRotations, getArmRotations } from '@/lib/digital-twin/posture';
 import { getHighlightForRegion, getEmissiveProps } from '@/lib/digital-twin/highlights';
 import { getVitalityColor } from '@/lib/digital-twin/vitality';
+import {
+  AnimatedPosture,
+  createDefaultAnimatedPosture,
+  lerpPosture,
+  lerpColor,
+} from '@/lib/digital-twin/animation';
 
 // Default material color for mannequin-like appearance (fallback)
 const DEFAULT_BODY_COLOR = '#f0f0f0';
@@ -209,49 +216,168 @@ export function ProceduralHuman({
   bodyState = DEFAULT_BODY_STATE,
 }: ProceduralHumanProps): React.JSX.Element {
   const groupRef = useRef<Group>(null);
+  const spineRef = useRef<Group>(null);
+  const headRef = useRef<Group>(null);
+  const neckRef = useRef<Group>(null);
+  const leftArmRef = useRef<Group>(null);
+  const rightArmRef = useRef<Group>(null);
+
+  // Animated state refs (persisted across frames)
+  const animatedPosture = useRef<AnimatedPosture>(createDefaultAnimatedPosture());
+  const animatedVitalityColor = useRef<string>(DEFAULT_BODY_COLOR);
 
   // Use body state for rendering
   const { posture, energyLevel, highlights } = bodyState;
 
-  // Calculate posture rotations
-  const postureRotations = getPostureRotations(energyLevel, posture);
-  const armRotations = getArmRotations(energyLevel);
+  // Calculate target posture rotations
+  const targetPostureRotations = getPostureRotations(energyLevel, posture);
+  const targetArmRotations = getArmRotations(energyLevel);
 
-  // Calculate vitality color based on energy level
-  const vitalityColor = getVitalityColor(energyLevel);
+  // Calculate target vitality color
+  const targetVitalityColor = getVitalityColor(energyLevel);
+
+  // Target posture state for animation
+  const targetPosture: AnimatedPosture = {
+    spineX: targetPostureRotations.spineX,
+    neckX: targetPostureRotations.neckX,
+    headX: targetPostureRotations.headX,
+    leftShoulderZ: targetArmRotations.leftShoulderZ,
+    rightShoulderZ: targetArmRotations.rightShoulderZ,
+  };
+
+  // State for re-rendering with animated vitality color
+  const [currentVitalityColor, setCurrentVitalityColor] = useState<string>(DEFAULT_BODY_COLOR);
+
+  // Animate posture and colors each frame
+  useFrame((_, delta) => {
+    // Lerp posture toward target
+    const newPosture = lerpPosture(animatedPosture.current, targetPosture, delta);
+    animatedPosture.current = newPosture;
+
+    // Lerp vitality color
+    const newColor = lerpColor(animatedVitalityColor.current, targetVitalityColor, delta);
+    animatedVitalityColor.current = newColor;
+
+    // Apply rotations directly to group refs for smooth animation
+    if (spineRef.current) {
+      spineRef.current.rotation.x = newPosture.spineX;
+    }
+    if (headRef.current) {
+      headRef.current.rotation.x = newPosture.headX;
+    }
+    if (neckRef.current) {
+      neckRef.current.rotation.x = newPosture.neckX;
+    }
+    if (leftArmRef.current) {
+      leftArmRef.current.rotation.z = -0.1 + newPosture.leftShoulderZ;
+    }
+    if (rightArmRef.current) {
+      rightArmRef.current.rotation.z = 0.1 + newPosture.rightShoulderZ;
+    }
+
+    // Update state periodically for material colors (less frequent)
+    // Only update when there's significant change to avoid excessive re-renders
+    const colorDiff = Math.abs(
+      parseInt(newColor.slice(1), 16) - parseInt(currentVitalityColor.slice(1), 16)
+    );
+    if (colorDiff > 1000) {
+      setCurrentVitalityColor(newColor);
+    }
+  });
 
   // Position the body so feet are at Y=0
-  // Total height: ~1.8 units (human-like proportions)
-  // Head top: ~1.8, feet: 0
-  const bodyOffset = 0.9; // Center of body
+  const bodyOffset = 0.9;
 
-  // Log body state for debugging (as per acceptance criteria)
-  console.log('[DigitalTwin] Body state:', bodyState);
-  console.log('[DigitalTwin] Vitality color:', vitalityColor);
+  // Log body state for debugging (only on prop change, not every frame)
+  useEffect(() => {
+    console.log('[DigitalTwin] Body state:', bodyState);
+    console.log('[DigitalTwin] Target vitality color:', targetVitalityColor);
+  }, [bodyState, targetVitalityColor]);
 
   return (
     <group ref={groupRef} position={position}>
       {/* Main body group - offset to position feet at ground */}
       <group position={[0, bodyOffset, 0]}>
-        {/* Spine rotation applied to upper body */}
-        <group rotation={[postureRotations.spineX, 0, 0]}>
+        {/* Spine rotation applied to upper body - animated via ref */}
+        <group ref={spineRef}>
           {/* Head & Neck */}
           <group position={[0, 0.5, 0]}>
-            <Head rotationX={postureRotations.headX} vitalityColor={vitalityColor} />
-            <Neck rotationX={postureRotations.neckX} vitalityColor={vitalityColor} />
+            <group ref={headRef} position={[0, 0.35, 0]}>
+              <mesh castShadow>
+                <sphereGeometry args={[0.12, 32, 32]} />
+                <meshStandardMaterial color={currentVitalityColor} />
+              </mesh>
+            </group>
+            <group ref={neckRef} position={[0, 0.2, 0]}>
+              <mesh castShadow>
+                <cylinderGeometry args={[0.04, 0.05, 0.15, 16]} />
+                <meshStandardMaterial color={currentVitalityColor} />
+              </mesh>
+            </group>
           </group>
 
           {/* Torso with highlights and vitality */}
-          <Torso highlights={highlights} vitalityColor={vitalityColor} />
+          <Torso highlights={highlights} vitalityColor={currentVitalityColor} />
 
-          {/* Arms with shoulder rotation, highlights, and vitality */}
-          <Arm side="left" shoulderRotationZ={armRotations.leftShoulderZ} highlights={highlights} vitalityColor={vitalityColor} />
-          <Arm side="right" shoulderRotationZ={armRotations.rightShoulderZ} highlights={highlights} vitalityColor={vitalityColor} />
+          {/* Arms with animated shoulder rotation */}
+          <group position={[-0.2, 0.25, 0]}>
+            <mesh castShadow>
+              <sphereGeometry args={[0.045, 16, 16]} />
+              <meshStandardMaterial {...getMaterialProps(highlights, 'left-shoulder', currentVitalityColor)} />
+            </mesh>
+            <group ref={leftArmRef}>
+              <mesh position={[0, -0.15, 0]} castShadow>
+                <capsuleGeometry args={[0.04, 0.2, 8, 16]} />
+                <meshStandardMaterial color={currentVitalityColor} />
+              </mesh>
+              <group position={[0, -0.3, 0]}>
+                <mesh castShadow>
+                  <sphereGeometry args={[0.035, 16, 16]} />
+                  <meshStandardMaterial {...getMaterialProps(highlights, 'left-elbow', currentVitalityColor)} />
+                </mesh>
+                <mesh position={[0, -0.13, 0]} castShadow>
+                  <capsuleGeometry args={[0.035, 0.18, 8, 16]} />
+                  <meshStandardMaterial color={currentVitalityColor} />
+                </mesh>
+                <mesh position={[0, -0.3, 0]} castShadow>
+                  <sphereGeometry args={[0.04, 16, 16]} />
+                  <meshStandardMaterial color={currentVitalityColor} />
+                </mesh>
+              </group>
+            </group>
+          </group>
+
+          <group position={[0.2, 0.25, 0]}>
+            <mesh castShadow>
+              <sphereGeometry args={[0.045, 16, 16]} />
+              <meshStandardMaterial {...getMaterialProps(highlights, 'right-shoulder', currentVitalityColor)} />
+            </mesh>
+            <group ref={rightArmRef}>
+              <mesh position={[0, -0.15, 0]} castShadow>
+                <capsuleGeometry args={[0.04, 0.2, 8, 16]} />
+                <meshStandardMaterial color={currentVitalityColor} />
+              </mesh>
+              <group position={[0, -0.3, 0]}>
+                <mesh castShadow>
+                  <sphereGeometry args={[0.035, 16, 16]} />
+                  <meshStandardMaterial {...getMaterialProps(highlights, 'right-elbow', currentVitalityColor)} />
+                </mesh>
+                <mesh position={[0, -0.13, 0]} castShadow>
+                  <capsuleGeometry args={[0.035, 0.18, 8, 16]} />
+                  <meshStandardMaterial color={currentVitalityColor} />
+                </mesh>
+                <mesh position={[0, -0.3, 0]} castShadow>
+                  <sphereGeometry args={[0.04, 16, 16]} />
+                  <meshStandardMaterial color={currentVitalityColor} />
+                </mesh>
+              </group>
+            </group>
+          </group>
         </group>
 
         {/* Legs with highlights and vitality */}
-        <Leg side="left" highlights={highlights} vitalityColor={vitalityColor} />
-        <Leg side="right" highlights={highlights} vitalityColor={vitalityColor} />
+        <Leg side="left" highlights={highlights} vitalityColor={currentVitalityColor} />
+        <Leg side="right" highlights={highlights} vitalityColor={currentVitalityColor} />
       </group>
     </group>
   );
