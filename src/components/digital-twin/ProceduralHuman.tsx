@@ -56,6 +56,55 @@ interface ArmProps {
   side: 'left' | 'right';
 }
 
+interface LegProps {
+  side: 'left' | 'right';
+}
+
+function Leg({ side }: LegProps): React.JSX.Element {
+  const xSign = side === 'left' ? -1 : 1;
+  const hipX = xSign * 0.08;
+
+  return (
+    <group position={[hipX, -0.4, 0]}>
+      {/* Hip joint */}
+      <mesh castShadow>
+        <sphereGeometry args={[0.055, 16, 16]} />
+        <meshStandardMaterial color={BODY_COLOR} />
+      </mesh>
+
+      {/* Thigh */}
+      <group>
+        <mesh position={[0, -0.2, 0]} castShadow>
+          <capsuleGeometry args={[0.055, 0.28, 8, 16]} />
+          <meshStandardMaterial color={BODY_COLOR} />
+        </mesh>
+
+        {/* Knee joint */}
+        <group position={[0, -0.42, 0]}>
+          <mesh castShadow>
+            <sphereGeometry args={[0.045, 16, 16]} />
+            <meshStandardMaterial color={BODY_COLOR} />
+          </mesh>
+
+          {/* Shin */}
+          <mesh position={[0, -0.2, 0]} castShadow>
+            <capsuleGeometry args={[0.04, 0.28, 8, 16]} />
+            <meshStandardMaterial color={BODY_COLOR} />
+          </mesh>
+
+          {/* Foot */}
+          <group position={[0, -0.42, 0.03]}>
+            <mesh castShadow>
+              <boxGeometry args={[0.08, 0.04, 0.14]} />
+              <meshStandardMaterial color={BODY_COLOR} />
+            </mesh>
+          </group>
+        </group>
+      </group>
+    </group>
+  );
+}
+
 function Arm({ side }: ArmProps): React.JSX.Element {
   const xSign = side === 'left' ? -1 : 1;
   const shoulderX = xSign * 0.2;
@@ -125,6 +174,10 @@ export function ProceduralHuman({ position = [0, 0, 0] }: ProceduralHumanProps):
         {/* Arms */}
         <Arm side="left" />
         <Arm side="right" />
+
+        {/* Legs */}
+        <Leg side="left" />
+        <Leg side="right" />
       </group>
     </group>
   );

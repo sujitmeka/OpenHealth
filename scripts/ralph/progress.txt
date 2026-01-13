@@ -485,3 +485,30 @@ All 16 user stories have been implemented:
 - [x] typecheck passes
 - [x] renders in browser
 - [x] both arms visible at sides of torso
+
+---
+## 2025-01-13 - DT-005: Procedural human body - legs
+
+**Implemented:**
+- Added Leg component with side prop ('left' | 'right')
+- Hip joint as sphere
+- Thigh as capsule (radius 0.055, length 0.28)
+- Knee joint as sphere
+- Shin as capsule (radius 0.04, length 0.28)
+- Foot as box (flat, extends forward)
+- Hierarchical grouping: hip → thigh → knee → shin → foot
+- Legs positioned close together under pelvis
+
+**Files modified:**
+- src/components/digital-twin/ProceduralHuman.tsx
+
+**Three.js learnings:**
+- BoxGeometry for flat feet [width, height, depth]
+- Foot offset in Z direction to extend forward naturally
+- Full body height ~1.8 units with bodyOffset=0.9
+
+**Verified:**
+- [x] typecheck passes
+- [x] renders in browser
+- [x] full mannequin body visible with proper proportions
+- [x] feet touch ground plane
