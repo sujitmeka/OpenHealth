@@ -459,3 +459,29 @@ All 16 user stories have been implemented:
 - [x] typecheck passes
 - [x] renders in browser
 - [x] head, neck, torso visible with proper proportions
+
+---
+## 2025-01-13 - DT-004: Procedural human body - arms
+
+**Implemented:**
+- Added Arm component with side prop ('left' | 'right')
+- Shoulder joint as small sphere
+- Upper arm as capsule (radius 0.04, length 0.2)
+- Elbow joint as sphere
+- Forearm as capsule (radius 0.035, length 0.18)
+- Hand as sphere
+- Hierarchical grouping: shoulder → upper arm → elbow → forearm → hand
+- Arms hang naturally at sides with slight outward angle
+
+**Files modified:**
+- src/components/digital-twin/ProceduralHuman.tsx
+
+**Three.js learnings:**
+- xSign pattern for mirroring left/right limbs
+- Group rotation allows whole limb to rotate from shoulder
+- Nested groups enable joint rotations (elbow bends relative to upper arm)
+
+**Verified:**
+- [x] typecheck passes
+- [x] renders in browser
+- [x] both arms visible at sides of torso

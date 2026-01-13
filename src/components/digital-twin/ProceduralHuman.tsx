@@ -52,6 +52,55 @@ function Torso(): React.JSX.Element {
   );
 }
 
+interface ArmProps {
+  side: 'left' | 'right';
+}
+
+function Arm({ side }: ArmProps): React.JSX.Element {
+  const xSign = side === 'left' ? -1 : 1;
+  const shoulderX = xSign * 0.2;
+
+  return (
+    <group position={[shoulderX, 0.25, 0]}>
+      {/* Shoulder joint (small sphere) */}
+      <mesh castShadow>
+        <sphereGeometry args={[0.045, 16, 16]} />
+        <meshStandardMaterial color={BODY_COLOR} />
+      </mesh>
+
+      {/* Upper arm - rotated to hang at side */}
+      <group rotation={[0, 0, xSign * 0.1]}>
+        <mesh position={[0, -0.15, 0]} castShadow>
+          <capsuleGeometry args={[0.04, 0.2, 8, 16]} />
+          <meshStandardMaterial color={BODY_COLOR} />
+        </mesh>
+
+        {/* Elbow joint */}
+        <group position={[0, -0.3, 0]}>
+          <mesh castShadow>
+            <sphereGeometry args={[0.035, 16, 16]} />
+            <meshStandardMaterial color={BODY_COLOR} />
+          </mesh>
+
+          {/* Forearm */}
+          <mesh position={[0, -0.13, 0]} castShadow>
+            <capsuleGeometry args={[0.035, 0.18, 8, 16]} />
+            <meshStandardMaterial color={BODY_COLOR} />
+          </mesh>
+
+          {/* Hand */}
+          <group position={[0, -0.3, 0]}>
+            <mesh castShadow>
+              <sphereGeometry args={[0.04, 16, 16]} />
+              <meshStandardMaterial color={BODY_COLOR} />
+            </mesh>
+          </group>
+        </group>
+      </group>
+    </group>
+  );
+}
+
 export function ProceduralHuman({ position = [0, 0, 0] }: ProceduralHumanProps): React.JSX.Element {
   const groupRef = useRef<Group>(null);
 
@@ -72,6 +121,10 @@ export function ProceduralHuman({ position = [0, 0, 0] }: ProceduralHumanProps):
 
         {/* Torso */}
         <Torso />
+
+        {/* Arms */}
+        <Arm side="left" />
+        <Arm side="right" />
       </group>
     </group>
   );

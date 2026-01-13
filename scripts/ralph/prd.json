@@ -58,14 +58,14 @@
       "acceptanceCriteria": [
         "Left and right arms added to ProceduralHuman",
         "Upper arm (shoulder to elbow) as capsule",
-        "Forearm (elbow to wrist) as capsule", 
+        "Forearm (elbow to wrist) as capsule",
         "Hands as small spheres or boxes",
         "Arms positioned at sides naturally",
         "Shoulders connect to torso properly",
         "typecheck passes"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "Use Three.js Groups for hierarchy: shoulder → upperArm → forearm → hand. This allows joint rotation later."
     },
     {
