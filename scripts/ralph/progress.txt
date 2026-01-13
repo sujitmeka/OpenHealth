@@ -787,3 +787,30 @@ body.rotation.y = swayCycle * 0.01;
 
 **Verified:**
 - [x] typecheck passes
+
+---
+## 2025-01-13 - DT-015: Subtle ground shadow
+
+**Implemented:**
+- Added ContactShadows from @react-three/drei
+- Replaced ground plane with ContactShadows component
+- Settings: opacity=0.4, scale=3, blur=2, far=2, color=#1a1a1a
+
+**ContactShadows props:**
+- position: [0, 0, 0] - at ground level
+- opacity: 0.4 - subtle shadow
+- scale: 3 - covers area under model
+- blur: 2 - soft edges
+- far: 2 - shadow reach distance
+- color: #1a1a1a - near-black for shadow
+
+**Files modified:**
+- src/components/digital-twin/TwinCanvas.tsx
+
+**drei learnings:**
+- ContactShadows renders baked shadows, more performant than real-time
+- No receiveShadow needed on ground plane
+- Works well with any 3D objects placed above it
+
+**Verified:**
+- [x] typecheck passes

@@ -1,7 +1,7 @@
 'use client';
 
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, ContactShadows } from '@react-three/drei';
 import type { ReactNode } from 'react';
 
 interface TwinCanvasProps {
@@ -65,13 +65,17 @@ export function TwinCanvas({ children }: TwinCanvasProps): React.JSX.Element {
       >
         <Lighting />
 
-        {/* Ground plane for reference */}
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-          <planeGeometry args={[10, 10]} />
-          <meshStandardMaterial color="#e8eaed" transparent opacity={0.5} />
-        </mesh>
+        {/* Subtle contact shadow beneath the figure */}
+        <ContactShadows
+          position={[0, 0, 0]}
+          opacity={0.4}
+          scale={3}
+          blur={2}
+          far={2}
+          color="#1a1a1a"
+        />
 
-        {/* Test box - will be replaced with human model */}
+        {/* Model content */}
         {children ?? <TestBox />}
 
         {/* OrbitControls for user interaction */}
