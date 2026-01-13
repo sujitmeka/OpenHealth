@@ -134,7 +134,7 @@
         "typecheck passes"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "Spine rotation X: 0 (upright) to 0.3 (hunched). Neck: 0 to 0.2. Shoulders: rotate inward when tired."
     },
     {

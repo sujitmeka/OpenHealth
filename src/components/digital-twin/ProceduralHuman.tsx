@@ -3,6 +3,7 @@
 import { useRef } from 'react';
 import { Group } from 'three';
 import { BodyState, DEFAULT_BODY_STATE } from '@/lib/digital-twin/types';
+import { getPostureRotations, getArmRotations } from '@/lib/digital-twin/posture';
 
 // Default material color for mannequin-like appearance
 const BODY_COLOR = '#f0f0f0';
@@ -12,9 +13,13 @@ interface ProceduralHumanProps {
   bodyState?: BodyState;
 }
 
-function Head(): React.JSX.Element {
+interface HeadProps {
+  rotationX?: number;
+}
+
+function Head({ rotationX = 0 }: HeadProps): React.JSX.Element {
   return (
-    <group position={[0, 0.35, 0]}>
+    <group position={[0, 0.35, 0]} rotation={[rotationX, 0, 0]}>
       {/* Head - sphere */}
       <mesh castShadow>
         <sphereGeometry args={[0.12, 32, 32]} />
@@ -24,9 +29,13 @@ function Head(): React.JSX.Element {
   );
 }
 
-function Neck(): React.JSX.Element {
+interface NeckProps {
+  rotationX?: number;
+}
+
+function Neck({ rotationX = 0 }: NeckProps): React.JSX.Element {
   return (
-    <group position={[0, 0.2, 0]}>
+    <group position={[0, 0.2, 0]} rotation={[rotationX, 0, 0]}>
       {/* Neck - cylinder */}
       <mesh castShadow>
         <cylinderGeometry args={[0.04, 0.05, 0.15, 16]} />
@@ -56,6 +65,7 @@ function Torso(): React.JSX.Element {
 
 interface ArmProps {
   side: 'left' | 'right';
+  shoulderRotationZ?: number;
 }
 
 interface LegProps {
@@ -107,9 +117,10 @@ function Leg({ side }: LegProps): React.JSX.Element {
   );
 }
 
-function Arm({ side }: ArmProps): React.JSX.Element {
+function Arm({ side, shoulderRotationZ = 0 }: ArmProps): React.JSX.Element {
   const xSign = side === 'left' ? -1 : 1;
   const shoulderX = xSign * 0.2;
+  const baseRotation = xSign * 0.1;
 
   return (
     <group position={[shoulderX, 0.25, 0]}>
@@ -119,8 +130,8 @@ function Arm({ side }: ArmProps): React.JSX.Element {
         <meshStandardMaterial color={BODY_COLOR} />
       </mesh>
 
-      {/* Upper arm - rotated to hang at side */}
-      <group rotation={[0, 0, xSign * 0.1]}>
+      {/* Upper arm - rotated to hang at side, plus posture adjustment */}
+      <group rotation={[0, 0, baseRotation + shoulderRotationZ]}>
         <mesh position={[0, -0.15, 0]} castShadow>
           <capsuleGeometry args={[0.04, 0.2, 8, 16]} />
           <meshStandardMaterial color={BODY_COLOR} />
@@ -158,8 +169,12 @@ export function ProceduralHuman({
 }: ProceduralHumanProps): React.JSX.Element {
   const groupRef = useRef<Group>(null);
 
-  // Use body state for rendering (will be expanded in later stories)
-  const { skinTone } = bodyState;
+  // Use body state for rendering
+  const { posture, energyLevel } = bodyState;
+
+  // Calculate posture rotations
+  const postureRotations = getPostureRotations(energyLevel, posture);
+  const armRotations = getArmRotations(energyLevel);
 
   // Position the body so feet are at Y=0
   // Total height: ~1.8 units (human-like proportions)
@@ -168,25 +183,29 @@ export function ProceduralHuman({
 
   // Log body state for debugging (as per acceptance criteria)
   console.log('[DigitalTwin] Body state:', bodyState);
+  console.log('[DigitalTwin] Posture rotations:', postureRotations);
 
   return (
     <group ref={groupRef} position={position}>
       {/* Main body group - offset to position feet at ground */}
       <group position={[0, bodyOffset, 0]}>
-        {/* Head & Neck */}
-        <group position={[0, 0.5, 0]}>
-          <Head />
-          <Neck />
+        {/* Spine rotation applied to upper body */}
+        <group rotation={[postureRotations.spineX, 0, 0]}>
+          {/* Head & Neck */}
+          <group position={[0, 0.5, 0]}>
+            <Head rotationX={postureRotations.headX} />
+            <Neck rotationX={postureRotations.neckX} />
+          </group>
+
+          {/* Torso */}
+          <Torso />
+
+          {/* Arms with shoulder rotation */}
+          <Arm side="left" shoulderRotationZ={armRotations.leftShoulderZ} />
+          <Arm side="right" shoulderRotationZ={armRotations.rightShoulderZ} />
         </group>
 
-        {/* Torso */}
-        <Torso />
-
-        {/* Arms */}
-        <Arm side="left" />
-        <Arm side="right" />
-
-        {/* Legs */}
+        {/* Legs stay upright */}
         <Leg side="left" />
         <Leg side="right" />
       </group>

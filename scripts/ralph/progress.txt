@@ -564,3 +564,35 @@ All 16 user stories have been implemented:
 
 **Verified:**
 - [x] typecheck passes
+
+---
+## 2025-01-13 - DT-008: Posture system - joint rotations
+
+**Implemented:**
+- Created src/lib/digital-twin/posture.ts
+- getPostureRotations(energyLevel, postureState) function
+- Returns: spineX, neckX, shoulderZ, headX in radians
+- Posture presets for upright/neutral/slouched/fatigued
+- getArmRotations(energyLevel) for shoulder adjustment
+- Updated ProceduralHuman to apply rotations
+- Added rotation props to Head, Neck, Arm components
+- Test page with energy slider to demo posture changes
+
+**Rotation values (radians):**
+- Upright: 0 on all axes
+- Fatigued: spineX=0.25, neckX=0.18, headX=0.15, shoulderZ=0.12
+
+**Files created:**
+- src/lib/digital-twin/posture.ts
+
+**Files modified:**
+- src/components/digital-twin/ProceduralHuman.tsx
+- src/app/twin-test/page.tsx
+
+**Three.js learnings:**
+- Group rotation affects all children (spine rotation cascades)
+- Separate upper body rotation from legs for realistic posture
+
+**Verified:**
+- [x] typecheck passes
+- [x] posture rotations calculated correctly
