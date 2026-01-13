@@ -1,17 +1,26 @@
+import { HealthDataStore } from '@/lib/store/health-data';
+import { generateGoals, type Goal } from '@/lib/analysis/goals';
+import { GoalsClient } from './GoalsClient';
+
+function getGoals(): Goal[] {
+  const biomarkers = HealthDataStore.getBiomarkers();
+  const phenoAge = HealthDataStore.getPhenoAge();
+  const bodyComp = HealthDataStore.getBodyComp();
+
+  return generateGoals(biomarkers, phenoAge, bodyComp);
+}
+
 export default function GoalsPage(): React.JSX.Element {
+  const goals = getGoals();
+
   return (
-    <div>
-      <header className="mb-8">
+    <div className="space-y-6">
+      <header>
         <h1 className="text-2xl font-semibold text-slate-900">Goals</h1>
         <p className="text-slate-500 mt-1">Your personalized health improvement goals</p>
       </header>
 
-      {/* Placeholder - will be replaced with GoalCards */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-8">
-        <p className="text-slate-500 text-center">
-          Goals page content coming soon...
-        </p>
-      </div>
+      <GoalsClient goals={goals} />
     </div>
   );
 }

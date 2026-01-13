@@ -133,7 +133,7 @@
         "typecheck passes"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "Simple weighted formula. 100 = perfect health. 0 = everything out of range."
     },
     {
@@ -149,7 +149,7 @@
         "typecheck passes"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "notes": "Prominent score display. Can use SVG arc or recharts RadialBarChart."
     },
     {
@@ -167,7 +167,7 @@
         "typecheck passes"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "notes": "Reference HEALTH_KNOWLEDGE.md for what goals to generate. E.g., high LDL → 'Lower artery-clogging cholesterol'"
     },
     {
@@ -186,7 +186,7 @@
         "typecheck passes"
       ],
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "notes": "Reference: InsideTracker Goals screenshot. Rich gradient backgrounds with white text overlay."
     },
     {
@@ -202,7 +202,7 @@
         "typecheck passes"
       ],
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "notes": "Simple vertical layout. 3-5 goal cards typically."
     },
     {
@@ -219,7 +219,7 @@
         "typecheck passes"
       ],
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "notes": "Transparency about what data is loaded. Helps user debug issues."
     },
     {
@@ -236,7 +236,7 @@
         "typecheck passes"
       ],
       "priority": 14,
-      "passes": false,
+      "passes": true,
       "notes": "Dashboard is the overview. Shows highlights, links to detail pages."
     },
     {
@@ -253,7 +253,7 @@
         "typecheck passes"
       ],
       "priority": 15,
-      "passes": false,
+      "passes": true,
       "notes": "Reference: InsideTracker screenshot. Clean layout with inline sparkline."
     },
     {
@@ -269,7 +269,7 @@
         "typecheck passes"
       ],
       "priority": 16,
-      "passes": false,
+      "passes": true,
       "notes": "Small summary cards for at-a-glance metrics."
     },
     {

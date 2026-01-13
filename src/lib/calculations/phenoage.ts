@@ -83,10 +83,15 @@ export function calculatePhenoAge(
 
   // Step 3: Calculate PhenoAge
   // PhenoAge = 141.50225 + ln(-0.00553 × ln(1 - m)) / 0.090165
-  const phenoAge = 141.50225 + Math.log(-0.00553 * Math.log(1 - m)) / 0.090165;
+  // Guard against m being too close to 1 which causes -Infinity
+  const safeMortality = Math.min(m, 0.9999);
+  const phenoAge = 141.50225 + Math.log(-0.00553 * Math.log(1 - safeMortality)) / 0.090165;
+
+  // Clamp to reasonable range (0 to 150 years)
+  const clampedPhenoAge = Math.max(0, Math.min(150, phenoAge));
 
   // Round to 1 decimal place
-  const roundedPhenoAge = Math.round(phenoAge * 10) / 10;
+  const roundedPhenoAge = Math.round(clampedPhenoAge * 10) / 10;
 
   // Delta = PhenoAge - chronologicalAge (negative = biologically younger)
   const delta = Math.round((roundedPhenoAge - chronologicalAge) * 10) / 10;

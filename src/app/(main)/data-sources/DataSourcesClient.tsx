@@ -1,0 +1,178 @@
+'use client';
+
+import { CARD_CLASSES, STATUS_COLORS, BORDERS } from '@/lib/design/tokens';
+import type { DataSourceInfo } from './page';
+import type { FileType } from '@/lib/files';
+
+interface DataSourcesClientProps {
+  dataSources: DataSourceInfo[];
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatDate(isoString: string): string {
+  const date = new Date(isoString);
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function getFileTypeIcon(type: FileType): React.JSX.Element {
+  const baseClasses = "w-10 h-10 rounded-lg flex items-center justify-center";
+
+  switch (type) {
+    case 'bloodwork':
+      return (
+        <div className={baseClasses} style={{ backgroundColor: '#fef2f2' }}>
+          <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+          </svg>
+        </div>
+      );
+    case 'dexa':
+      return (
+        <div className={baseClasses} style={{ backgroundColor: '#f0fdf4' }}>
+          <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+        </div>
+      );
+    case 'activity':
+      return (
+        <div className={baseClasses} style={{ backgroundColor: '#eff6ff' }}>
+          <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </div>
+      );
+    default:
+      return (
+        <div className={baseClasses} style={{ backgroundColor: '#f1f5f9' }}>
+          <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        </div>
+      );
+  }
+}
+
+function getFileTypeLabel(type: FileType): string {
+  switch (type) {
+    case 'bloodwork': return 'Blood Work';
+    case 'dexa': return 'DEXA Scan';
+    case 'activity': return 'Activity';
+    default: return 'Unknown';
+  }
+}
+
+function getStatusBadge(status: DataSourceInfo['status']): React.JSX.Element {
+  const statusConfig = {
+    loaded: { bg: STATUS_COLORS.optimal.light, text: STATUS_COLORS.optimal.text, label: 'Loaded' },
+    error: { bg: STATUS_COLORS.outOfRange.light, text: STATUS_COLORS.outOfRange.text, label: 'Error' },
+    pending: { bg: STATUS_COLORS.normal.light, text: STATUS_COLORS.normal.text, label: 'Pending' },
+  };
+
+  const config = statusConfig[status];
+
+  return (
+    <span
+      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+      style={{ backgroundColor: config.bg, color: config.text }}
+    >
+      {config.label}
+    </span>
+  );
+}
+
+export function DataSourcesClient({ dataSources }: DataSourcesClientProps): React.JSX.Element {
+  return (
+    <div className="space-y-6">
+      {/* Instructions card */}
+      <div className={`${CARD_CLASSES.base} ${CARD_CLASSES.padding}`} style={{ backgroundColor: '#f8fafc' }}>
+        <h3 className="font-medium text-slate-900 mb-2">Adding New Data</h3>
+        <p className="text-sm text-slate-600 mb-3">
+          To add new health data, place files in the <code className="bg-slate-200 px-1.5 py-0.5 rounded text-xs">/data</code> folder in the project directory.
+        </p>
+        <div className="text-sm text-slate-600 space-y-1">
+          <p><strong>Supported formats:</strong> .txt, .csv, .xlsx</p>
+          <p><strong>File naming:</strong> Include keywords like "blood", "dexa", or "whoop" for auto-detection.</p>
+        </div>
+      </div>
+
+      {/* Data sources list */}
+      {dataSources.length === 0 ? (
+        <div className={`${CARD_CLASSES.base} ${CARD_CLASSES.padding} text-center py-12`}>
+          <svg className="w-12 h-12 text-slate-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+          </svg>
+          <h3 className="text-lg font-medium text-slate-900 mb-2">No data files found</h3>
+          <p className="text-slate-500">
+            Add .txt, .csv, or .xlsx files to the <code className="bg-slate-100 px-1.5 py-0.5 rounded text-xs">/data</code> folder to get started.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {dataSources.map((source) => (
+            <div
+              key={source.name}
+              className={`${CARD_CLASSES.base} ${CARD_CLASSES.hover} p-4`}
+            >
+              <div className="flex items-start gap-4">
+                {getFileTypeIcon(source.type)}
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-medium text-slate-900 truncate">{source.name}</h3>
+                    {getStatusBadge(source.status)}
+                  </div>
+
+                  <div className="flex items-center gap-4 mt-1 text-sm text-slate-500">
+                    <span>{getFileTypeLabel(source.type)}</span>
+                    <span>{formatFileSize(source.size)}</span>
+                    <span>{formatDate(source.lastModified)}</span>
+                  </div>
+
+                  {source.extractedData && source.extractedData.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {source.extractedData.map((data, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center px-2 py-0.5 rounded text-xs"
+                          style={{ backgroundColor: '#f1f5f9', color: '#475569' }}
+                        >
+                          {data}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Sync button */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => window.location.reload()}
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+          style={{ backgroundColor: STATUS_COLORS.optimal.base }}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Sync Now
+        </button>
+      </div>
+    </div>
+  );
+}

@@ -1,21 +1,27 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import Link from 'next/link';
 import { HealthDataStore } from '@/lib/store/health-data';
-import {
-  BIOMARKER_REFERENCES,
-  getBiomarkerStatus,
-  getStatusColor,
-  getStatusBgColor,
-} from '@/lib/types/health';
-import { getImprovements } from '@/lib/analysis/improvements';
-import { Chat } from '@/components/Chat';
-import { SyncButton } from '@/components/SyncButton';
+import { calculateHealthScore } from '@/lib/calculations/health-score';
+import { generateGoals } from '@/lib/analysis/goals';
+import { HealthScoreCard } from '@/components/dashboard/HealthScoreCard';
+import { BiologicalAgeCard } from '@/components/dashboard/BiologicalAgeCard';
+import { QuickStatCard } from '@/components/dashboard/QuickStatCard';
+import { GoalCard } from '@/components/goals/GoalCard';
 import { DigitalTwin } from '@/components/digital-twin/DigitalTwin';
+import { SyncButton } from '@/components/SyncButton';
+import { CARD_CLASSES, type StatusType } from '@/lib/design/tokens';
+
+function getActivityStatus(value: number, type: 'hrv' | 'rhr' | 'sleep'): StatusType {
+  switch (type) {
+    case 'hrv':
+      return value >= 50 ? 'optimal' : value >= 30 ? 'normal' : 'outOfRange';
+    case 'rhr':
+      return value < 60 ? 'optimal' : value < 80 ? 'normal' : 'outOfRange';
+    case 'sleep':
+      return value >= 7 && value <= 9 ? 'optimal' : value >= 6 ? 'normal' : 'outOfRange';
+    default:
+      return 'normal';
+  }
+}
 
 export default function DashboardPage(): React.JSX.Element {
   // Load health data on server side
@@ -25,293 +31,167 @@ export default function DashboardPage(): React.JSX.Element {
   const phenoAge = HealthDataStore.getPhenoAge();
   const chronoAge = HealthDataStore.getChronologicalAge();
 
+  // Calculate health score
+  const healthScore = calculateHealthScore(biomarkers, phenoAge, activity);
+
+  // Generate goals
+  const goals = generateGoals(biomarkers, phenoAge, bodyComp);
+  const topGoals = goals.slice(0, 3);
+
   // Calculate activity averages
   const activityAvg =
     activity.length > 0
       ? {
-          hrv:
-            activity.reduce((sum, d) => sum + d.hrv, 0) / activity.length,
-          rhr:
-            activity.reduce((sum, d) => sum + d.rhr, 0) / activity.length,
-          sleep:
-            activity.reduce((sum, d) => sum + d.sleepHours, 0) /
-            activity.length,
+          hrv: activity.reduce((sum, d) => sum + d.hrv, 0) / activity.length,
+          rhr: activity.reduce((sum, d) => sum + d.rhr, 0) / activity.length,
+          sleep: activity.reduce((sum, d) => sum + d.sleepHours, 0) / activity.length,
         }
       : null;
 
-  // Format biomarkers for display (excluding patientAge)
-  const biomarkerEntries = Object.entries(biomarkers)
-    .filter(([key]) => key !== 'patientAge')
-    .map(([key, value]) => {
-      const ref = BIOMARKER_REFERENCES[key];
-      const status = getBiomarkerStatus(key, value as number);
-      return {
-        key,
-        name: ref?.displayName ?? key,
-        value: value as number,
-        unit: ref?.unit ?? '',
-        status,
-        colorClass: getStatusColor(status),
-      };
-    });
-
-  // Body comp entries
-  const bodyCompEntries = Object.entries(bodyComp).map(([key, value]) => {
-    const ref = BIOMARKER_REFERENCES[key];
-    const status = getBiomarkerStatus(key, value as number);
-    return {
-      key,
-      name: ref?.displayName ?? formatKey(key),
-      value: value as number,
-      unit: ref?.unit ?? '',
-      status,
-      colorClass: getStatusColor(status),
-    };
-  });
-
-  // Get improvements
-  const improvements = getImprovements(biomarkers, bodyComp);
+  // Body fat from body comp
+  const bodyFat = bodyComp.bodyFatPercent;
+  const bodyFatStatus: StatusType = bodyFat
+    ? bodyFat < 18 ? 'optimal' : bodyFat < 25 ? 'normal' : 'outOfRange'
+    : 'normal';
 
   return (
-    <div>
+    <div className="space-y-6">
       {/* Header Section */}
-      <header className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-semibold text-slate-900">
-            Dashboard
-          </h1>
-          <SyncButton />
+      <header className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-900">Dashboard</h1>
+          <p className="text-slate-500 mt-1">Your health at a glance</p>
         </div>
-
-        {/* Age Display */}
-        <div className="flex flex-wrap gap-6 text-base">
-          <div>
-            <span className="text-slate-500">
-              Chronological Age:{' '}
-            </span>
-            <span className="font-semibold text-slate-900">
-              {chronoAge !== null ? `${chronoAge} years` : '--'}
-            </span>
-          </div>
-          <div>
-            <span className="text-slate-500">
-              Biological Age:{' '}
-            </span>
-            <span className="font-semibold text-slate-900">
-              {phenoAge !== null ? `${phenoAge.phenoAge} years` : '--'}
-            </span>
-          </div>
-          <div>
-            <span className="text-slate-500">Delta: </span>
-            <span
-              className={`font-semibold ${
-                phenoAge !== null
-                  ? phenoAge.delta < 0
-                    ? 'text-emerald-600'
-                    : phenoAge.delta > 0
-                      ? 'text-pink-600'
-                      : 'text-slate-900'
-                  : 'text-slate-900'
-              }`}
-            >
-              {phenoAge !== null
-                ? `${phenoAge.delta >= 0 ? '+' : ''}${phenoAge.delta} years`
-                : '--'}
-            </span>
-          </div>
-        </div>
+        <SyncButton />
       </header>
 
-      {/* Main Content: Digital Twin + Stats Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Digital Twin - Left Side */}
-        <Card className="lg:row-span-2 bg-white rounded-xl shadow-sm border border-slate-100">
-          <CardHeader>
-            <CardTitle className="text-lg font-medium">Digital Twin</CardTitle>
-            <CardDescription>Visual representation of your health</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <DigitalTwin
-              className="w-full min-h-[400px] aspect-[4/5]"
-              healthData={{ biomarkers, bodyComp, activity }}
-            />
-          </CardContent>
-        </Card>
+      {/* Top Row: Health Score + Biological Age */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <HealthScoreCard result={healthScore} />
+        <BiologicalAgeCard
+          chronologicalAge={chronoAge}
+          phenoAge={phenoAge}
+        />
+      </div>
 
-        {/* Stats Cards - Right Side */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-6">
-        {/* Blood Work Card */}
-        <Card className="bg-white rounded-xl shadow-sm border border-slate-100">
-          <CardHeader>
-            <CardTitle className="text-lg font-medium">Blood Work</CardTitle>
-            <CardDescription>Lab results and biomarkers</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {biomarkerEntries.length > 0 ? (
-              <div className="space-y-2">
-                {biomarkerEntries.map(({ key, name, value, unit, colorClass }) => (
-                  <div
-                    key={key}
-                    className="flex justify-between items-center text-sm"
-                  >
-                    <span className="text-slate-600">
-                      {name}
-                    </span>
-                    <span className={`font-medium ${colorClass}`}>
-                      {value} {unit}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-slate-500">No data</p>
-            )}
-          </CardContent>
-        </Card>
+      {/* Second Row: Digital Twin + Quick Stats */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Digital Twin */}
+        <div className={`${CARD_CLASSES.base} ${CARD_CLASSES.padding}`}>
+          <h3 className="text-sm font-medium text-slate-500 mb-4">Digital Twin</h3>
+          <DigitalTwin
+            className="w-full min-h-[350px] aspect-square"
+            healthData={{ biomarkers, bodyComp, activity }}
+          />
+        </div>
 
-        {/* DEXA Card */}
-        <Card className="bg-white rounded-xl shadow-sm border border-slate-100">
-          <CardHeader>
-            <CardTitle className="text-lg font-medium">DEXA Scan</CardTitle>
-            <CardDescription>Body composition analysis</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {bodyCompEntries.length > 0 ? (
-              <div className="space-y-2">
-                {bodyCompEntries.map(({ key, name, value, unit, colorClass }) => (
-                  <div
-                    key={key}
-                    className="flex justify-between items-center text-sm"
-                  >
-                    <span className="text-slate-600">
-                      {name}
-                    </span>
-                    <span className={`font-medium ${colorClass}`}>
-                      {value}
-                      {unit && ` ${unit}`}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-slate-500">No data</p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Activity Card */}
-        <Card className="bg-white rounded-xl shadow-sm border border-slate-100">
-          <CardHeader>
-            <CardTitle className="text-lg font-medium">Activity</CardTitle>
-            <CardDescription>HRV, sleep, and recovery (7-day avg)</CardDescription>
-          </CardHeader>
-          <CardContent>
+        {/* Quick Stats */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-medium text-slate-500">Quick Stats</h3>
+          <div className="grid grid-cols-2 gap-4">
             {activityAvg ? (
-              <div className="space-y-2">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-600">
-                    HRV
-                  </span>
-                  <span className="font-medium text-slate-900">
-                    {activityAvg.hrv.toFixed(1)} ms
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-600">
-                    Resting HR
-                  </span>
-                  <span className="font-medium text-slate-900">
-                    {activityAvg.rhr.toFixed(1)} bpm
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-600">
-                    Sleep
-                  </span>
-                  <span className="font-medium text-slate-900">
-                    {activityAvg.sleep.toFixed(1)} hrs
-                  </span>
-                </div>
-              </div>
+              <>
+                <QuickStatCard
+                  label="HRV"
+                  value={activityAvg.hrv.toFixed(0)}
+                  unit="ms"
+                  status={getActivityStatus(activityAvg.hrv, 'hrv')}
+                />
+                <QuickStatCard
+                  label="Resting HR"
+                  value={activityAvg.rhr.toFixed(0)}
+                  unit="bpm"
+                  status={getActivityStatus(activityAvg.rhr, 'rhr')}
+                />
+                <QuickStatCard
+                  label="Sleep"
+                  value={activityAvg.sleep.toFixed(1)}
+                  unit="hrs"
+                  status={getActivityStatus(activityAvg.sleep, 'sleep')}
+                />
+              </>
             ) : (
-              <p className="text-slate-500">No data</p>
+              <>
+                <QuickStatCard label="HRV" value="--" unit="ms" />
+                <QuickStatCard label="Resting HR" value="--" unit="bpm" />
+                <QuickStatCard label="Sleep" value="--" unit="hrs" />
+              </>
             )}
-          </CardContent>
-        </Card>
+            <QuickStatCard
+              label="Body Fat"
+              value={bodyFat ? bodyFat.toFixed(1) : '--'}
+              unit="%"
+              status={bodyFatStatus}
+            />
+          </div>
+
+          {/* Biomarker summary */}
+          <div className={`${CARD_CLASSES.base} p-4`}>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-slate-500">Biomarkers</span>
+              <Link
+                href="/biomarkers"
+                className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+              >
+                View all →
+              </Link>
+            </div>
+            <div className="mt-3 grid grid-cols-3 gap-4 text-center">
+              <div>
+                <div className="text-xl font-semibold text-emerald-600">
+                  {healthScore.breakdown.optimalCount}
+                </div>
+                <div className="text-xs text-slate-500">Optimal</div>
+              </div>
+              <div>
+                <div className="text-xl font-semibold text-amber-500">
+                  {healthScore.breakdown.normalCount}
+                </div>
+                <div className="text-xs text-slate-500">Normal</div>
+              </div>
+              <div>
+                <div className="text-xl font-semibold text-pink-500">
+                  {healthScore.breakdown.outOfRangeCount}
+                </div>
+                <div className="text-xs text-slate-500">Out of Range</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Areas to Improve Section */}
-      <Card className="mb-8 bg-white rounded-xl shadow-sm border border-slate-100">
-        <CardHeader>
-          <CardTitle className="text-lg font-medium">Areas to Improve</CardTitle>
-          <CardDescription>
-            Recommendations based on your health data
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {improvements.length > 0 ? (
-            <div className="space-y-4">
-              {improvements.map((improvement) => (
-                <div
-                  key={improvement.biomarker}
-                  className={`p-4 rounded-lg ${getStatusBgColor(improvement.status)}`}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <span className="font-medium text-slate-900">
-                        {improvement.displayName}
-                      </span>
-                      <span className={`ml-2 text-sm ${getStatusColor(improvement.status)}`}>
-                        {improvement.currentValue} {improvement.unit}
-                      </span>
-                    </div>
-                    <span className="text-sm text-slate-500">
-                      Target: {improvement.targetValue}
-                    </span>
-                  </div>
-                  <p className="text-sm text-slate-600">
-                    {improvement.recommendation}
-                  </p>
-                </div>
-              ))}
-            </div>
-          ) : biomarkerEntries.length > 0 ? (
-            <div className="text-center py-4">
-              <p className="text-emerald-600 font-medium">
-                All biomarkers are within optimal ranges!
-              </p>
-              <p className="text-sm text-slate-500 mt-1">
-                Keep up the great work maintaining your health.
-              </p>
-            </div>
-          ) : (
-            <p className="text-slate-500">
-              Load your health data to see personalized recommendations
-            </p>
+      {/* Third Row: Top Goals */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-medium text-slate-900">Top Goals</h3>
+          {goals.length > 0 && (
+            <Link
+              href="/goals"
+              className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+            >
+              View all {goals.length} goals →
+            </Link>
           )}
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Chat Section */}
-      <Card className="bg-white rounded-xl shadow-sm border border-slate-100">
-        <CardHeader>
-          <CardTitle className="text-lg font-medium">Health Assistant</CardTitle>
-          <CardDescription>
-            Ask questions about your health data
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Chat />
-        </CardContent>
-      </Card>
+        {topGoals.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {topGoals.map((goal) => (
+              <GoalCard key={goal.id} goal={goal} compact />
+            ))}
+          </div>
+        ) : (
+          <div className={`${CARD_CLASSES.base} ${CARD_CLASSES.padding} text-center py-8`}>
+            <div className="text-emerald-600 mb-2">
+              <svg className="w-8 h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <p className="text-slate-600 font-medium">All biomarkers are in optimal ranges!</p>
+            <p className="text-sm text-slate-500 mt-1">Keep up the great work.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
-}
-
-function formatKey(key: string): string {
-  return key
-    .replace(/([A-Z])/g, ' $1')
-    .replace(/^./, (str) => str.toUpperCase())
-    .trim();
 }

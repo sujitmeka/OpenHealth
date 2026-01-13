@@ -8,6 +8,8 @@ export interface DataFile {
   type: FileType;
   path: string;
   extension: string;
+  size?: number;
+  lastModified?: string;
 }
 
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -44,11 +46,14 @@ export function getDataFiles(): DataFile[] {
 
     if (supportedExtensions.includes(ext)) {
       const filePath = path.join(DATA_DIR, file);
+      const stats = fs.statSync(filePath);
       const dataFile: DataFile = {
         name: file,
         type: getFileType(file),
         path: filePath,
         extension: ext,
+        size: stats.size,
+        lastModified: stats.mtime.toISOString(),
       };
       dataFiles.push(dataFile);
     }
