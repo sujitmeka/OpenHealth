@@ -926,6 +926,47 @@ body.rotation.y = swayCycle * 0.01;
 - [x] Loading fallback visible briefly on init
 
 ---
+## 2025-01-13 - DT-003 to DT-023: Clean Mannequin Refactor
+
+**Refactored to LatheGeometry-based smooth body parts:**
+
+**New files created:**
+- src/lib/digital-twin/proportions.ts - Anatomical body measurements
+- src/lib/digital-twin/geometry.ts - LatheGeometry helpers (createTaperedCapsule, createTorsoGeometry, etc.)
+- src/lib/digital-twin/materials.ts - Mannequin material system
+- src/components/digital-twin/body-parts/Torso.tsx - LatheGeometry torso
+- src/components/digital-twin/body-parts/Head.tsx - Oval head shape
+- src/components/digital-twin/body-parts/Neck.tsx - Smooth tapered neck
+- src/components/digital-twin/body-parts/Arm.tsx - Tapered limbs with mitten hands
+- src/components/digital-twin/body-parts/Leg.tsx - Natural stance legs
+
+**Files modified:**
+- src/components/digital-twin/ProceduralHuman.tsx - Uses new body-parts components
+- src/components/digital-twin/DigitalTwin.tsx - Fixed server/client boundary, accepts healthData prop
+- src/app/page.tsx - Passes healthData to DigitalTwin
+
+**Key patterns:**
+- LatheGeometry creates smooth rotational shapes from 2D profiles
+- createTaperedCapsule for limbs with hemisphere caps
+- createTorsoGeometry with control points for anatomical shape
+- Body parts accept color and highlight props
+- forwardRef pattern for all body part components
+- Geometry created with useMemo for performance
+- All positions derived from BODY_PROPORTIONS and BODY_POSITIONS constants
+
+**Learnings:**
+- Client components cannot import modules that use Node.js 'fs' directly
+- Pass server-side data as props to client components
+- LatheGeometry is perfect for organic rotational shapes
+- Overlapping meshes hides seams between body parts
+- 32 radial segments gives smooth curves
+
+**Verified:**
+- [x] typecheck passes
+- [x] dev server returns 200
+- [x] All 23 stories marked as passes: true
+
+---
 ## DIGITAL TWIN BUILD COMPLETE
 
 All 18 user stories have been implemented:

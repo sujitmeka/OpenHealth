@@ -16,7 +16,7 @@
         "typecheck passes"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "notes": "npm install three @react-three/fiber @react-three/drei && npm install -D @types/three"
     },
     {
@@ -34,7 +34,7 @@
         "typecheck passes"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "Studio lighting makes the mannequin look professional. Use directionalLight for main, ambientLight for fill."
     },
     {
@@ -57,7 +57,7 @@
         "typecheck passes"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "All body parts will reference these constants. Ensures consistent proportions. These create a ~2.1 unit tall figure."
     },
     {
@@ -73,7 +73,7 @@
         "typecheck passes"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "Combine CylinderGeometry with SphereGeometry halves. Or use LatheGeometry with custom profile for smoother result."
     },
     {
@@ -90,7 +90,7 @@
         "typecheck passes"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "Base material is shared. Highlight material clones base and adds emissive."
     },
     {
@@ -109,7 +109,7 @@
         "typecheck passes"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "LatheGeometry takes array of Vector2 points and rotates around Y axis. Define half-silhouette from center to edge."
     },
     {
@@ -126,7 +126,7 @@
         "typecheck passes"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": "SphereGeometry with scale [1, 1.15, 1] gives nice oval. Or custom LatheGeometry for more control."
     },
     {
@@ -142,7 +142,7 @@
         "typecheck passes"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "Overlapping meshes into each other hides seams. Position neck to penetrate 10-15% into both head and torso."
     },
     {
@@ -162,7 +162,7 @@
         "typecheck passes"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "notes": "Shoulder sphere position: at torso edge, slightly in front. Arm rests with slight outward angle, hands at thigh level."
     },
     {
@@ -182,7 +182,7 @@
         "typecheck passes"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "notes": "Ground is Y=0. Foot bottom flat at Y=0. Total leg height from hip to ground matches proportions."
     },
     {
@@ -202,7 +202,7 @@
         "typecheck passes"
       ],
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "notes": "Assembly and fine-tuning. Adjust positions until seams are invisible. This is critical for clean look."
     },
     {
@@ -218,7 +218,7 @@
         "typecheck passes"
       ],
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "notes": "Interface separates health logic from 3D rendering."
     },
     {
@@ -237,7 +237,7 @@
         "typecheck passes"
       ],
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "notes": "Simple thresholds. Health data → BodyState → visual representation."
     },
     {
@@ -255,7 +255,7 @@
         "typecheck passes"
       ],
       "priority": 14,
-      "passes": false,
+      "passes": true,
       "notes": "Spine rotates on X axis (forward bend). Shoulders rotate inward when tired. Keep subtle - not exaggerated."
     },
     {
@@ -271,7 +271,7 @@
         "typecheck passes"
       ],
       "priority": 15,
-      "passes": false,
+      "passes": true,
       "notes": "Use useMemo to create highlight materials. Apply based on bodyState.highlights array."
     },
     {
@@ -288,7 +288,7 @@
         "typecheck passes"
       ],
       "priority": 16,
-      "passes": false,
+      "passes": true,
       "notes": "Subtle effect. Use THREE.Color.lerp for smooth transitions."
     },
     {
@@ -304,7 +304,7 @@
         "typecheck passes"
       ],
       "priority": 17,
-      "passes": false,
+      "passes": true,
       "notes": "This wires everything together."
     },
     {
@@ -320,7 +320,7 @@
         "typecheck passes"
       ],
       "priority": 18,
-      "passes": false,
+      "passes": true,
       "notes": "Canvas needs explicit height. Use aspect-ratio or fixed height."
     },
     {
@@ -336,7 +336,7 @@
         "typecheck passes"
       ],
       "priority": 19,
-      "passes": false,
+      "passes": true,
       "notes": "Store target values in state, interpolate current toward target each frame."
     },
     {
@@ -351,7 +351,7 @@
         "typecheck passes"
       ],
       "priority": 20,
-      "passes": false,
+      "passes": true,
       "notes": "Very subtle. Should feel natural, not robotic."
     },
     {
@@ -367,7 +367,7 @@
         "typecheck passes"
       ],
       "priority": 21,
-      "passes": false,
+      "passes": true,
       "notes": "ContactShadows is simplest. Position at Y=0."
     },
     {
@@ -384,7 +384,7 @@
         "typecheck passes"
       ],
       "priority": 22,
-      "passes": false,
+      "passes": true,
       "notes": "Each mesh gets onClick. Show tooltip as Html element in 3D space."
     },
     {
@@ -400,7 +400,7 @@
         "typecheck passes"
       ],
       "priority": 23,
-      "passes": false,
+      "passes": true,
       "notes": "Final QA pass. Test all viewport sizes."
     }
   ]
