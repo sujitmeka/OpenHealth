@@ -626,3 +626,38 @@ All 16 user stories have been implemented:
 
 **Verified:**
 - [x] typecheck passes
+
+---
+## 2025-01-13 - DT-010: Skin tone and vitality visuals
+
+**Implemented:**
+- Created src/lib/digital-twin/vitality.ts
+- getVitalityColor(energyLevel) - calculates HSL-based color from energy
+- hslToHex() helper for HSL to hex conversion
+- lerp() helper for linear interpolation
+- VITALITY_PRESETS for quick reference colors
+
+**Color mapping:**
+- High energy (100): warm white hsl(30, 10%, 92%)
+- Low energy (0): cool gray hsl(220, 5%, 80%)
+- Smooth interpolation between values
+
+**Changes to ProceduralHuman:**
+- Import getVitalityColor from vitality.ts
+- Calculate vitalityColor based on energyLevel
+- Pass vitalityColor to all sub-components (Head, Neck, Torso, Arm, Leg)
+- All body parts now use vitality color as base material color
+
+**Files created:**
+- src/lib/digital-twin/vitality.ts
+
+**Files modified:**
+- src/components/digital-twin/ProceduralHuman.tsx
+
+**HSL learnings:**
+- HSL easier than RGB for intuitive color manipulation
+- Hue 30 = warm/orange, Hue 220 = cool/blue
+- Small saturation changes (5-10%) keep mannequin look
+
+**Verified:**
+- [x] typecheck passes
