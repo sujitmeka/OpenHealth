@@ -12,7 +12,7 @@ export async function parsePdf(filePath: string): Promise<string> {
     const parser = new PDFParse({ data: dataBuffer });
     const result = await parser.getText();
 
-    console.log('[HealthAI] Parsed PDF:', filePath, `(${result.numPages} pages, ${result.text.length} chars)`);
+    console.log('[HealthAI] Parsed PDF:', filePath, `(${result.text.length} chars)`);
 
     await parser.destroy();
 

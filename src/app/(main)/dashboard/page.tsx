@@ -23,13 +23,13 @@ function getActivityStatus(value: number, type: 'hrv' | 'rhr' | 'sleep'): Status
   }
 }
 
-export default function DashboardPage(): React.JSX.Element {
+export default async function DashboardPage(): Promise<React.JSX.Element> {
   // Load health data on server side
-  const biomarkers = HealthDataStore.getBiomarkers();
-  const bodyComp = HealthDataStore.getBodyComp();
-  const activity = HealthDataStore.getActivity();
-  const phenoAge = HealthDataStore.getPhenoAge();
-  const chronoAge = HealthDataStore.getChronologicalAge();
+  const biomarkers = await HealthDataStore.getBiomarkers();
+  const bodyComp = await HealthDataStore.getBodyComp();
+  const activity = await HealthDataStore.getActivity();
+  const phenoAge = await HealthDataStore.getPhenoAge();
+  const chronoAge = await HealthDataStore.getChronologicalAge();
 
   // Calculate health score
   const healthScore = calculateHealthScore(biomarkers, phenoAge, activity);

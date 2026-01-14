@@ -19,7 +19,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     // Get health context for the AI
-    const healthContext = HealthDataStore.getHealthSummary();
+    const healthContext = await HealthDataStore.getHealthSummary();
 
     // Query the goal agent
     const response: GoalAgentResponse = await queryGoalAgent(

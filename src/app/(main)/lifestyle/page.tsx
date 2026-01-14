@@ -1,8 +1,8 @@
 import { HealthDataStore, type ActivityData } from '@/lib/store/health-data';
 import { LifestyleClient } from './LifestyleClient';
 
-function getActivityData(): ActivityData[] {
-  return HealthDataStore.getActivity();
+async function getActivityData(): Promise<ActivityData[]> {
+  return await HealthDataStore.getActivity();
 }
 
 function calculateAverages(activity: ActivityData[]): {
@@ -40,8 +40,8 @@ function calculateAverages(activity: ActivityData[]): {
   };
 }
 
-export default function LifestylePage(): React.JSX.Element {
-  const activityData = getActivityData();
+export default async function LifestylePage(): Promise<React.JSX.Element> {
+  const activityData = await getActivityData();
   const averages = calculateAverages(activityData);
 
   return <LifestyleClient activityData={activityData} averages={averages} />;

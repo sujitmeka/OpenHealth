@@ -11,8 +11,8 @@ function mapStatusToType(status: BiomarkerStatus): StatusType {
   return 'normal';
 }
 
-function getBiomarkerData(): BiomarkerData {
-  const biomarkers = HealthDataStore.getBiomarkers();
+async function getBiomarkerData(): Promise<BiomarkerData> {
+  const biomarkers = await HealthDataStore.getBiomarkers();
   const rows = [];
 
   let total = 0;
@@ -53,8 +53,8 @@ function getBiomarkerData(): BiomarkerData {
   };
 }
 
-export default function BiomarkersPage(): React.JSX.Element {
-  const data = getBiomarkerData();
+export default async function BiomarkersPage(): Promise<React.JSX.Element> {
+  const data = await getBiomarkerData();
 
   return (
     <div className="space-y-6">

@@ -26,7 +26,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     // Get health context from data store
-    const healthContext = HealthDataStore.getHealthSummary();
+    const healthContext = await HealthDataStore.getHealthSummary();
 
     // Query the health agent
     const result = await queryHealthAgent(trimmedMessage, healthContext);

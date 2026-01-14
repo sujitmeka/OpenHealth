@@ -4,7 +4,7 @@ import { HealthDataStore } from '@/lib/store/health-data';
 export async function POST(): Promise<NextResponse> {
   try {
     // Force reload all data from /data folder
-    HealthDataStore.loadAllData();
+    await HealthDataStore.loadAllData();
 
     return NextResponse.json({ success: true, message: 'Data synced successfully' });
   } catch (error) {
