@@ -251,7 +251,8 @@ export const BIOMARKER_REFERENCES: Record<string, BiomarkerReference> = {
     name: 'HbA1c',
     category: 'metabolic',
     unit: '%',
-    standardRange: { max: 5.7 },
+    // ADA defines prediabetes as HbA1c ≥5.7%, use 5.69 so 5.7 is out_of_range
+    standardRange: { max: 5.69 },
     optimalRange: { min: 4.5, max: 5.25 },
     direction: 'lower',
   },
@@ -619,7 +620,7 @@ export const BIOMARKER_REFERENCES: Record<string, BiomarkerReference> = {
     name: 'MLR (Monocyte-to-Lymphocyte)',
     category: 'cbc-ratios',
     unit: 'ratio',
-    optimalRange: { max: 0.29 },
+    optimalRange: { max: 0.25 },
     direction: 'lower',
     isCalculated: true,
     formula: 'monocytes / lymphocytes (absolute)',
