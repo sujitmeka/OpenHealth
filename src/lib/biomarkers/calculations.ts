@@ -265,6 +265,120 @@ export function calculateDerivedBiomarkers(raw: RawBiomarkers): CalculatedBiomar
     });
   }
 
+  // LMR (Lymphocyte-to-Monocyte Ratio) - inverse of MLR
+  if (lymphocytes && monocytes && monocytes > 0) {
+    calculated.push({
+      id: 'lmr',
+      name: 'LMR (Lymphocyte/Monocyte)',
+      value: round(lymphocytes / monocytes, 2),
+      unit: 'ratio',
+      formula: 'Lymphocytes ÷ Monocytes',
+      inputs: ['lymphocytes', 'monocytes'],
+    });
+  }
+
+  // PWR (Platelet-to-WBC Ratio)
+  if (raw.platelets && raw.wbc && raw.wbc > 0) {
+    calculated.push({
+      id: 'pwr',
+      name: 'PWR (Platelet/WBC)',
+      value: round(raw.platelets / raw.wbc, 1),
+      unit: 'ratio',
+      formula: 'Platelets ÷ WBC',
+      inputs: ['platelets', 'wbc'],
+    });
+  }
+
+  // ============================================
+  // LIPID-INFLAMMATION RATIOS
+  // ============================================
+
+  // MHR (Monocyte-to-HDL Ratio)
+  // Monocytes in cells/µL (×10³), HDL in mg/dL
+  if (monocytes && raw.hdl && raw.hdl > 0) {
+    // Convert monocytes from cells/µL to ×10³/µL for standard MHR calculation
+    const monocytesK = monocytes / 1000;
+    calculated.push({
+      id: 'mhr',
+      name: 'MHR (Monocyte/HDL)',
+      value: round(monocytesK / raw.hdl, 4),
+      unit: 'ratio',
+      formula: '(Monocytes ÷ 1000) ÷ HDL',
+      inputs: ['monocytes', 'hdl'],
+    });
+  }
+
+  // NHR (Neutrophil-to-HDL Ratio)
+  // Neutrophils in cells/µL (×10³), HDL in mg/dL
+  if (neutrophils && raw.hdl && raw.hdl > 0) {
+    // Convert neutrophils from cells/µL to ×10³/µL
+    const neutrophilsK = neutrophils / 1000;
+    calculated.push({
+      id: 'nhr',
+      name: 'NHR (Neutrophil/HDL)',
+      value: round(neutrophilsK / raw.hdl, 4),
+      unit: 'ratio',
+      formula: '(Neutrophils ÷ 1000) ÷ HDL',
+      inputs: ['neutrophils', 'hdl'],
+    });
+  }
+
+  // GGT/HDL Ratio (metabolic health marker)
+  if (raw.ggt && raw.hdl && raw.hdl > 0) {
+    calculated.push({
+      id: 'ggtHdlRatio',
+      name: 'GGT/HDL Ratio',
+      value: round(raw.ggt / raw.hdl, 2),
+      unit: 'ratio',
+      formula: 'GGT ÷ HDL',
+      inputs: ['ggt', 'hdl'],
+    });
+  }
+
+  // ============================================
+  // INFLAMMATION MARKERS
+  // ============================================
+
+  // CAR (CRP-to-Albumin Ratio) - inflammation/nutrition marker
+  if (raw.crp && raw.albumin && raw.albumin > 0) {
+    calculated.push({
+      id: 'car',
+      name: 'CAR (CRP/Albumin)',
+      value: round(raw.crp / raw.albumin, 3),
+      unit: 'ratio',
+      formula: 'CRP ÷ Albumin',
+      inputs: ['crp', 'albumin'],
+    });
+  }
+
+  // Ferritin/Albumin Ratio - inflammation marker
+  if (raw.ferritin && raw.albumin && raw.albumin > 0) {
+    calculated.push({
+      id: 'ferritinAlbuminRatio',
+      name: 'Ferritin/Albumin Ratio',
+      value: round(raw.ferritin / raw.albumin, 1),
+      unit: 'ratio',
+      formula: 'Ferritin ÷ Albumin',
+      inputs: ['ferritin', 'albumin'],
+    });
+  }
+
+  // ============================================
+  // CBC CELL SIZE RATIOS
+  // ============================================
+
+  // RDW/MCV Ratio - anemia differentiation
+  if (raw.rdw && raw.mcv && raw.mcv > 0) {
+    calculated.push({
+      id: 'rdwMcvRatio',
+      name: 'RDW/MCV Ratio',
+      value: round(raw.rdw / raw.mcv, 3),
+      unit: 'ratio',
+      formula: 'RDW ÷ MCV',
+      inputs: ['rdw', 'mcv'],
+    });
+  }
+
   // ============================================
   // THYROID RATIOS
   // ============================================

@@ -271,7 +271,6 @@ const NAME_TO_ID: Record<string, string> = {
 
   // Metabolic - additional aliases
   'urea nitrogen (bun)': 'bun',
-  'urea nitrogen': 'bun',
   'protein, total': 'totalProtein',
   'protein total': 'totalProtein',
   'albumin/globulin ratio': 'agRatio',
