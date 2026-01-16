@@ -2,15 +2,22 @@ import Link from 'next/link';
 import { HealthDataStore } from '@/lib/store/health-data';
 import { calculateHealthScore } from '@/lib/calculations/health-score';
 import { generateGoals } from '@/lib/analysis/goals';
-import { HealthScoreCard } from '@/components/dashboard/HealthScoreCard';
-import { BiologicalAgeCard } from '@/components/dashboard/BiologicalAgeCard';
-import { QuickStatCard } from '@/components/dashboard/QuickStatCard';
-import { GoalCard } from '@/components/goals/GoalCard';
+import { generateContextualPills } from '@/lib/ai-chat/generateContextualPills';
+import { selectTopMarkers } from '@/lib/biomarkers/selectTopMarkers';
+import { calculateWeeklySummary } from '@/lib/lifestyle/calculateWeeklySummary';
+import { HeroMetrics } from '@/components/dashboard/HeroMetrics';
+import { StatsGrid } from '@/components/dashboard/StatsGrid';
+import { GoalsSection } from '@/components/dashboard/GoalsSection';
 import { DigitalTwin } from '@/components/digital-twin/DigitalTwin';
 import { SyncButton } from '@/components/SyncButton';
-import { CARD_CLASSES, type StatusType } from '@/lib/design/tokens';
+import { DataFreshnessBar } from '@/components/dashboard/DataFreshnessBar';
+import { TopMarkersCard } from '@/components/dashboard/TopMarkersCard';
+import { WeeklyLifestyleCard } from '@/components/dashboard/WeeklyLifestyleCard';
+import { ChatProvider } from '@/lib/ai-chat/ChatContext';
+import { AIChatWidget } from '@/components/ai-chat/AIChatWidget';
+import { type StatusType, SPACING } from '@/lib/design/tokens';
 
-function getActivityStatus(value: number, type: 'hrv' | 'rhr' | 'sleep'): StatusType {
+function getActivityStatus(value: number, type: 'hrv' | 'rhr' | 'sleep' | 'bodyFat'): StatusType {
   switch (type) {
     case 'hrv':
       return value >= 50 ? 'optimal' : value >= 30 ? 'normal' : 'outOfRange';
@@ -18,6 +25,8 @@ function getActivityStatus(value: number, type: 'hrv' | 'rhr' | 'sleep'): Status
       return value < 60 ? 'optimal' : value < 80 ? 'normal' : 'outOfRange';
     case 'sleep':
       return value >= 7 && value <= 9 ? 'optimal' : value >= 6 ? 'normal' : 'outOfRange';
+    case 'bodyFat':
+      return value < 18 ? 'optimal' : value < 25 ? 'normal' : 'outOfRange';
     default:
       return 'normal';
   }
@@ -30,13 +39,22 @@ export default async function DashboardPage(): Promise<React.JSX.Element> {
   const activity = await HealthDataStore.getActivity();
   const phenoAge = await HealthDataStore.getPhenoAge();
   const chronoAge = await HealthDataStore.getChronologicalAge();
+  const timestamps = await HealthDataStore.getTimestamps();
 
   // Calculate health score
   const healthScore = calculateHealthScore(biomarkers, phenoAge, activity);
 
   // Generate goals
   const goals = generateGoals(biomarkers, phenoAge, bodyComp);
-  const topGoals = goals.slice(0, 3);
+
+  // Generate contextual pills for AI chat
+  const contextualPills = generateContextualPills(biomarkers);
+
+  // Select top 5 markers to watch
+  const topMarkers = selectTopMarkers(biomarkers);
+
+  // Calculate weekly lifestyle summary
+  const weeklySummary = calculateWeeklySummary(activity);
 
   // Calculate activity averages
   const activityAvg =
@@ -50,148 +68,133 @@ export default async function DashboardPage(): Promise<React.JSX.Element> {
 
   // Body fat from body comp
   const bodyFat = bodyComp.bodyFatPercent;
-  const bodyFatStatus: StatusType = bodyFat
-    ? bodyFat < 18 ? 'optimal' : bodyFat < 25 ? 'normal' : 'outOfRange'
-    : 'normal';
+
+  // Build stats array
+  const stats = [
+    {
+      label: 'HRV',
+      value: activityAvg ? activityAvg.hrv.toFixed(0) : '--',
+      unit: 'ms',
+      status: activityAvg ? getActivityStatus(activityAvg.hrv, 'hrv') : ('normal' as StatusType),
+    },
+    {
+      label: 'Resting HR',
+      value: activityAvg ? activityAvg.rhr.toFixed(0) : '--',
+      unit: 'bpm',
+      status: activityAvg ? getActivityStatus(activityAvg.rhr, 'rhr') : ('normal' as StatusType),
+    },
+    {
+      label: 'Sleep',
+      value: activityAvg ? activityAvg.sleep.toFixed(1) : '--',
+      unit: 'hrs',
+      status: activityAvg ? getActivityStatus(activityAvg.sleep, 'sleep') : ('normal' as StatusType),
+    },
+    {
+      label: 'Body Fat',
+      value: bodyFat ? bodyFat.toFixed(1) : '--',
+      unit: '%',
+      status: bodyFat ? getActivityStatus(bodyFat, 'bodyFat') : ('normal' as StatusType),
+    },
+  ];
 
   return (
-    <div className="space-y-6">
-      {/* Header Section */}
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Dashboard</h1>
-          <p className="text-slate-500 mt-1">Your health at a glance</p>
+    <ChatProvider>
+      <div className="max-w-6xl mx-auto px-6 py-8" style={{ gap: SPACING.lg }}>
+        {/* Header */}
+        <header className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+            <p className="text-gray-500 mt-1">Your health at a glance</p>
+          </div>
+          <SyncButton />
+        </header>
+
+        {/* AI Chat Bar */}
+        <div className="mb-4">
+          <AIChatWidget contextualPills={contextualPills} />
         </div>
-        <SyncButton />
-      </header>
 
-      {/* Top Row: Health Score + Biological Age */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <HealthScoreCard result={healthScore} />
-        <BiologicalAgeCard
-          chronologicalAge={chronoAge}
-          phenoAge={phenoAge}
-        />
-      </div>
+        {/* Data Freshness Bar */}
+        <div className="mb-6 -mx-6 px-6">
+          <DataFreshnessBar timestamps={timestamps} />
+        </div>
 
-      {/* Second Row: Digital Twin + Quick Stats */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Digital Twin */}
-        <div className={`${CARD_CLASSES.base} ${CARD_CLASSES.padding}`}>
-          <h3 className="text-sm font-medium text-slate-500 mb-4">Digital Twin</h3>
-          <DigitalTwin
-            className="w-full min-h-[350px] aspect-square"
-            healthData={{ biomarkers, bodyComp, activity }}
+        {/* Hero Metrics - Health Score + Bio Age */}
+        <div className="mb-8">
+          <HeroMetrics
+            healthScore={healthScore}
+            chronologicalAge={chronoAge}
+            phenoAge={phenoAge}
           />
         </div>
 
-        {/* Quick Stats */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-medium text-slate-500">Quick Stats</h3>
-          <div className="grid grid-cols-2 gap-4">
-            {activityAvg ? (
-              <>
-                <QuickStatCard
-                  label="HRV"
-                  value={activityAvg.hrv.toFixed(0)}
-                  unit="ms"
-                  status={getActivityStatus(activityAvg.hrv, 'hrv')}
-                />
-                <QuickStatCard
-                  label="Resting HR"
-                  value={activityAvg.rhr.toFixed(0)}
-                  unit="bpm"
-                  status={getActivityStatus(activityAvg.rhr, 'rhr')}
-                />
-                <QuickStatCard
-                  label="Sleep"
-                  value={activityAvg.sleep.toFixed(1)}
-                  unit="hrs"
-                  status={getActivityStatus(activityAvg.sleep, 'sleep')}
-                />
-              </>
-            ) : (
-              <>
-                <QuickStatCard label="HRV" value="--" unit="ms" />
-                <QuickStatCard label="Resting HR" value="--" unit="bpm" />
-                <QuickStatCard label="Sleep" value="--" unit="hrs" />
-              </>
-            )}
-            <QuickStatCard
-              label="Body Fat"
-              value={bodyFat ? bodyFat.toFixed(1) : '--'}
-              unit="%"
-              status={bodyFatStatus}
+        {/* Main Grid Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+          {/* Digital Twin - Takes 4 columns */}
+          <div className="lg:col-span-4 bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+            <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">
+              Digital Twin
+            </h3>
+            <DigitalTwin
+              className="w-full min-h-[300px] aspect-square"
+              healthData={{ biomarkers, bodyComp, activity }}
             />
           </div>
 
-          {/* Biomarker summary */}
-          <div className={`${CARD_CLASSES.base} p-4`}>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-500">Biomarkers</span>
-              <Link
-                href="/biomarkers"
-                className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
-              >
-                View all →
-              </Link>
-            </div>
-            <div className="mt-3 grid grid-cols-3 gap-4 text-center">
-              <div>
-                <div className="text-xl font-semibold text-emerald-600">
-                  {healthScore.breakdown.optimalCount}
-                </div>
-                <div className="text-xs text-slate-500">Optimal</div>
-              </div>
-              <div>
-                <div className="text-xl font-semibold text-amber-500">
-                  {healthScore.breakdown.normalCount}
-                </div>
-                <div className="text-xs text-slate-500">Normal</div>
-              </div>
-              <div>
-                <div className="text-xl font-semibold text-pink-500">
-                  {healthScore.breakdown.outOfRangeCount}
-                </div>
-                <div className="text-xs text-slate-500">Out of Range</div>
-              </div>
-            </div>
+          {/* Middle Column: Stats Grid - Takes 5 columns */}
+          <div className="lg:col-span-5">
+            <StatsGrid
+              stats={stats}
+              biomarkerCounts={{
+                optimal: healthScore.breakdown.optimalCount,
+                normal: healthScore.breakdown.normalCount,
+                outOfRange: healthScore.breakdown.outOfRangeCount,
+              }}
+            />
+          </div>
+
+          {/* Right Column: Top Markers + Weekly Lifestyle - Takes 3 columns */}
+          <div className="lg:col-span-3 space-y-6">
+            <TopMarkersCard markers={topMarkers} />
+            <WeeklyLifestyleCard summary={weeklySummary} />
           </div>
         </div>
-      </div>
 
-      {/* Third Row: Top Goals */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium text-slate-900">Top Goals</h3>
-          {goals.length > 0 && (
+        {/* Goals Section */}
+        <div className="mb-8">
+          <GoalsSection goals={goals} />
+        </div>
+
+        {/* Footer links */}
+        <div className="pt-6 border-t border-gray-200">
+          <div className="flex flex-wrap gap-6 text-sm">
             <Link
-              href="/goals"
-              className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+              href="/biomarkers"
+              className="text-gray-500 hover:text-gray-900 transition-colors"
             >
-              View all {goals.length} goals →
+              Biomarkers
             </Link>
-          )}
+            <Link
+              href="/body-comp"
+              className="text-gray-500 hover:text-gray-900 transition-colors"
+            >
+              Body Composition
+            </Link>
+            <Link
+              href="/lifestyle"
+              className="text-gray-500 hover:text-gray-900 transition-colors"
+            >
+              Lifestyle
+            </Link>
+            <Link
+              href="/data-sources"
+              className="text-gray-500 hover:text-gray-900 transition-colors"
+            >
+              Data Sources
+            </Link>
+          </div>
         </div>
-
-        {topGoals.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {topGoals.map((goal) => (
-              <GoalCard key={goal.id} goal={goal} compact />
-            ))}
-          </div>
-        ) : (
-          <div className={`${CARD_CLASSES.base} ${CARD_CLASSES.padding} text-center py-8`}>
-            <div className="text-emerald-600 mb-2">
-              <svg className="w-8 h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <p className="text-slate-600 font-medium">All biomarkers are in optimal ranges!</p>
-            <p className="text-sm text-slate-500 mt-1">Keep up the great work.</p>
-          </div>
-        )}
       </div>
-    </div>
+    </ChatProvider>
   );
 }
