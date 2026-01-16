@@ -162,10 +162,21 @@ class HealthDataStoreClass {
               this.data.bodyComp = await extractBodyCompWithAI(pdfText);
               usedAIBodyCompExtraction = true;
 
-              // Save to cache
-              writeBodyCompCache(this.data.bodyComp, relativePath, fileHash);
-              updateManifestEntry(manifest, relativePath, fileHash, 'dexa');
-              manifestChanged = true;
+              // Only cache if extraction succeeded (has meaningful data)
+              const hasData = !!(
+                this.data.bodyComp.bodyFatPercent ||
+                this.data.bodyComp.leanMass ||
+                this.data.bodyComp.fatMass
+              );
+
+              if (hasData) {
+                writeBodyCompCache(this.data.bodyComp, relativePath, fileHash);
+                updateManifestEntry(manifest, relativePath, fileHash, 'dexa');
+                manifestChanged = true;
+                console.log('[HealthAI] Body comp extraction successful, cached');
+              } else {
+                console.warn('[HealthAI] Body comp extraction returned empty, NOT caching');
+              }
             }
           }
         }
