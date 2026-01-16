@@ -19,6 +19,20 @@ export interface BodyCompCache {
 
 const CURRENT_VERSION = 1;
 
+/**
+ * Check if body composition data is valid (not empty)
+ */
+function isValidBodyCompData(data: BodyComposition): boolean {
+  // Must have at least one meaningful field
+  return !!(
+    data.bodyFatPercent ||
+    data.leanMass ||
+    data.fatMass ||
+    data.boneMineralContent ||
+    data.totalMass
+  );
+}
+
 function ensureCacheDir(): void {
   if (!fs.existsSync(CACHE_DIR)) {
     fs.mkdirSync(CACHE_DIR, { recursive: true });
@@ -37,6 +51,12 @@ export function readBodyCompCache(): BodyCompCache | null {
     const cache = JSON.parse(data) as BodyCompCache;
 
     if (cache.version !== CURRENT_VERSION) {
+      return null;
+    }
+
+    // Validate cached data is not empty
+    if (!isValidBodyCompData(cache.data)) {
+      console.log('[Cache] Body comp cache contains invalid/empty data, ignoring');
       return null;
     }
 
