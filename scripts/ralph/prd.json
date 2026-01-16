@@ -1,393 +1,229 @@
 {
   "branchName": "main",
   "projectName": "healthai",
-  "sprintFocus": "UX Polish + Gamification",
-  "designReference": "Clean, modern health dashboard like InsideTracker. Soft shadows, consistent color coding (green=optimal, yellow=normal, pink/red=out of range). Good typography hierarchy. Polished but not flashy.",
+  "sprintFocus": "Dashboard Components - AI Chat Bar + Data Freshness + Top 5 Markers + Lifestyle Summary",
+  "designReference": "Modern health dashboard. AI-first experience with chat bar at top. Clean, minimal, functional.",
   "userStories": [
     {
-      "id": "UX-001",
-      "title": "Tab navigation system",
+      "id": "DASH-001",
+      "title": "AI Chat Bar - Collapsed State",
       "acceptanceCriteria": [
-        "Top navigation bar with tabs: Dashboard, Biomarkers, Goals, Data Sources",
-        "Clean horizontal tab design",
-        "Active tab clearly highlighted",
-        "URL changes with tab (e.g., /dashboard, /biomarkers, /goals, /data)",
-        "Use Next.js App Router for pages",
-        "Tabs work without full page reload",
+        "components/ai-chat/ChatBar.tsx exists",
+        "Rounded pill-shaped bar, full width with horizontal padding",
+        "Soft shadow (shadow-md or similar)",
+        "Left: AI sparkle/brain icon",
+        "Center: Placeholder text 'Ask anything about your health...'",
+        "Right: 2-3 contextual pill buttons (styled as small rounded buttons)",
+        "Pill buttons are clickable and will trigger chat expansion",
+        "Clicking anywhere on bar triggers expansion",
+        "Uses design tokens for colors (not hardcoded)",
         "typecheck passes"
       ],
       "priority": 1,
       "passes": true,
-      "notes": "Create app/(main)/dashboard, app/(main)/biomarkers, app/(main)/goals, app/(main)/data-sources folders. Shared layout with tab nav."
+      "notes": "This is the collapsed default state. Just the visual - expansion logic comes next."
     },
     {
-      "id": "UX-002",
-      "title": "Color system and design tokens",
+      "id": "DASH-002",
+      "title": "AI Chat Bar - Contextual Pills Logic",
       "acceptanceCriteria": [
-        "lib/design/tokens.ts exists with color constants",
-        "Status colors: optimal (#10b981 green), normal (#eab308 yellow), outOfRange (#ec4899 pink)",
-        "Background colors: card (#ffffff), page (#f8fafc), accent backgrounds",
-        "Text colors: primary (#0f172a), secondary (#64748b), muted (#94a3b8)",
-        "Consistent shadow tokens: sm, md, lg",
-        "Border radius tokens: sm (6px), md (12px), lg (16px)",
-        "All components use these tokens, not hardcoded colors",
+        "lib/ai-chat/generateContextualPills.ts exists",
+        "Function takes biomarker data as input",
+        "Returns array of 2-3 suggested questions",
+        "If any markers out of range: generates questions like 'Why is my [marker] [value]?'",
+        "Prioritizes ApoB and HbA1c if they are out of range",
+        "If all optimal: returns questions like 'What's keeping me healthy?' or 'What should I test next?'",
+        "Questions are concise (under 30 characters ideally)",
         "typecheck passes"
       ],
       "priority": 2,
       "passes": true,
-      "notes": "Single source of truth for design. Import tokens everywhere."
+      "notes": "Smart question generation based on user's actual data. Import biomarker data from existing store."
     },
     {
-      "id": "UX-003",
-      "title": "Biomarker summary card",
+      "id": "DASH-003",
+      "title": "AI Chat Bar - Expanded State",
       "acceptanceCriteria": [
-        "components/biomarkers/BiomarkerSummary.tsx exists",
-        "Shows: Total count, Optimal count, Normal count, Out of Range count",
-        "Large numbers with labels below",
-        "Horizontal stacked bar showing proportion (green | yellow | pink)",
-        "Bar segments proportional to counts",
-        "Clean card with subtle shadow",
-        "Pulls data from HealthDataStore",
+        "components/ai-chat/ChatModal.tsx exists",
+        "Modal slides down from ChatBar position",
+        "Background behind modal is blurred (backdrop-blur-sm or similar)",
+        "Semi-transparent dark overlay on background",
+        "Chat interface inside modal: message list + input field",
+        "Close button (X) in top right of modal",
+        "Clicking outside modal closes it",
+        "ESC key closes modal",
+        "Modal is centered, max-width ~600px, max-height ~70vh",
         "typecheck passes"
       ],
       "priority": 3,
       "passes": true,
-      "notes": "Reference: InsideTracker screenshot. 105 Total | 50 Optimal | 40 Normal | 15 Out of Range with colored bar below."
+      "notes": "Focus on the UI/UX of expansion. Actual AI responses come later."
     },
     {
-      "id": "UX-004",
-      "title": "Biomarker search and filter controls",
+      "id": "DASH-004",
+      "title": "AI Chat Bar - State Management",
       "acceptanceCriteria": [
-        "Search input to filter biomarkers by name",
-        "Dropdown filter: All ranges, Optimal, Normal, Out of Range",
-        "Dropdown filter: Category (Lipids, Metabolic, Inflammation, Hormones, etc.)",
-        "Filters work together (AND logic)",
-        "Clear/reset filters option",
-        "Styled consistently with design tokens",
+        "ChatBar and ChatModal share state via React context or zustand",
+        "isExpanded boolean controls collapsed/expanded",
+        "messages array stores chat history",
+        "Clicking ChatBar or pill sets isExpanded=true",
+        "Clicking pill also pre-fills input with that question",
+        "Close button or outside click sets isExpanded=false",
+        "Chat history persists when closing/reopening modal",
         "typecheck passes"
       ],
       "priority": 4,
       "passes": true,
-      "notes": "Use shadcn Select or custom dropdown. Search is instant filter, not submit-based."
+      "notes": "State management for chat. Can use zustand store or React context."
     },
     {
-      "id": "UX-005",
-      "title": "Biomarker table with status badges",
+      "id": "DASH-005",
+      "title": "AI Chat Bar - Basic AI Response",
       "acceptanceCriteria": [
-        "components/biomarkers/BiomarkerTable.tsx exists",
-        "Columns: Name, Status, Value, History",
-        "Name column: biomarker name, sortable",
-        "Status column: colored badge (Optimal/Normal/Out of Range)",
-        "Value column: number with unit",
-        "Rows are cards with subtle separation",
-        "Sortable by clicking column headers",
-        "Responsive (works on laptop screens)",
+        "lib/ai-chat/chatWithAI.ts exists",
+        "Function sends message to /api/chat endpoint",
+        "API route calls Anthropic Claude API",
+        "System prompt includes user's biomarker data as context",
+        "Streaming response displayed in chat",
+        "Loading state shown while waiting",
+        "Error handling if API fails",
+        "Uses ANTHROPIC_API_KEY from environment",
         "typecheck passes"
       ],
       "priority": 5,
       "passes": true,
-      "notes": "Not a traditional table - more like stacked cards. Each row is its own card."
+      "notes": "Wire up actual AI. System prompt should include relevant health data so AI can give personalized answers."
     },
     {
-      "id": "UX-006",
-      "title": "Sparkline history charts",
+      "id": "DASH-006",
+      "title": "Data Freshness Indicator",
       "acceptanceCriteria": [
-        "components/charts/Sparkline.tsx exists",
-        "Mini inline chart showing trend",
-        "Shows reference range as background band (green zone)",
-        "Current value as dot on the line",
-        "Line color matches status (green/yellow/pink)",
-        "Works with minimal data (even 1-2 points)",
-        "Fixed small size (~120px wide, ~40px tall)",
+        "components/dashboard/DataFreshnessBar.tsx exists",
+        "Horizontal bar below AI chat bar",
+        "Shows data sources with last updated time",
+        "Format: 'Blood work: 3 days ago | Whoop: 2 hrs ago | DEXA: 45 days ago'",
+        "Uses relative time (moment.js, date-fns, or similar)",
+        "Fresh data (<7 days): normal text color",
+        "Stale data (>30 days): yellow/amber warning color",
+        "Very stale (>90 days): red color with 'Retest recommended' badge",
+        "Pulls last-updated timestamps from data store",
+        "Subtle styling - not too prominent",
         "typecheck passes"
       ],
       "priority": 6,
       "passes": true,
-      "notes": "Use recharts or visx for sparklines. Show optimal range as light green background band."
+      "notes": "Helps user know if their data is current. Nudges retesting when stale."
     },
     {
-      "id": "UX-007",
-      "title": "Biomarkers page assembly",
+      "id": "DASH-007",
+      "title": "Top 5 Personalized Markers - Component",
       "acceptanceCriteria": [
-        "app/(main)/biomarkers/page.tsx exists",
-        "Layout: Summary card at top, filters below, table below filters",
-        "Filters affect table content",
-        "Page title: 'Biomarkers'",
-        "Clean spacing and hierarchy",
-        "Loads real data from HealthDataStore",
+        "components/dashboard/TopMarkersCard.tsx exists",
+        "Card with title 'Key Markers' or 'Markers to Watch'",
+        "Shows exactly 5 biomarkers in a list",
+        "Each row: marker name, value with unit, status indicator (color dot or badge)",
+        "Status colors use design tokens (green/yellow/pink)",
+        "Compact layout - fits in dashboard grid",
+        "Clicking a marker could link to full biomarkers page (optional)",
         "typecheck passes"
       ],
       "priority": 7,
       "passes": true,
-      "notes": "Assemble components into full page."
+      "notes": "Visual component. Selection logic is separate."
     },
     {
-      "id": "UX-008",
-      "title": "Health Score calculation",
+      "id": "DASH-008",
+      "title": "Top 5 Personalized Markers - Selection Logic",
       "acceptanceCriteria": [
-        "lib/calculations/health-score.ts exists",
-        "calculateHealthScore(healthData) returns 0-100 number",
-        "Score based on: % optimal biomarkers, PhenoAge delta, activity metrics",
-        "Weights: biomarkers 50%, age delta 30%, activity 20%",
-        "Returns object: { score: number, breakdown: {...} }",
+        "lib/biomarkers/selectTopMarkers.ts exists",
+        "Function takes all biomarkers as input, returns top 5",
+        "Always includes ApoB (fixed)",
+        "Always includes HbA1c (fixed)",
+        "Remaining 3 slots: AI-ranked by clinical significance",
+        "Prioritizes out-of-range markers with high health impact",
+        "Deprioritizes obscure markers (e.g., indirect bilirubin) even if out of range",
+        "Has a LONGEVITY_PRIORITY list: hs-CRP, Vitamin D, LDL-C, HDL-C, triglycerides, fasting insulin, homocysteine",
+        "If marker is out of range AND in priority list, it ranks higher",
+        "Returns array of 5 marker objects with name, value, unit, status",
         "typecheck passes"
       ],
       "priority": 8,
       "passes": true,
-      "notes": "Simple weighted formula. 100 = perfect health. 0 = everything out of range."
+      "notes": "Hybrid logic: 2 fixed + 3 intelligently selected. Not just 'worst 5' - clinically relevant worst."
     },
     {
-      "id": "UX-009",
-      "title": "Health Score card",
+      "id": "DASH-009",
+      "title": "Weekly Lifestyle Summary - Component",
       "acceptanceCriteria": [
-        "components/dashboard/HealthScoreCard.tsx exists",
-        "Large circular or semi-circular gauge showing score",
-        "Score number prominently displayed (e.g., '81 points')",
-        "Status label: Optimal (80+), Good (60-79), Fair (40-59), Needs Work (<40)",
-        "Colored by status (green/yellow/orange/red)",
-        "Clean card design matching other cards",
+        "components/dashboard/WeeklyLifestyleCard.tsx exists",
+        "Card with title 'This Week' or 'Weekly Summary'",
+        "Shows 4 metrics in grid or row layout",
+        "Sleep Consistency: percentage with label",
+        "HRV: number (ms) with label",
+        "Strain: number with label",
+        "Recovery: percentage with label",
+        "Each metric has subtle icon",
+        "Shows 'weekly average' subtext",
+        "Placeholder/skeleton if no Whoop data connected",
         "typecheck passes"
       ],
       "priority": 9,
       "passes": true,
-      "notes": "Prominent score display. Can use SVG arc or recharts RadialBarChart."
+      "notes": "Visual component for lifestyle data. Data fetching is separate."
     },
     {
-      "id": "UX-010",
-      "title": "Goals generation from health data",
+      "id": "DASH-010",
+      "title": "Weekly Lifestyle Summary - Data Integration",
       "acceptanceCriteria": [
-        "lib/analysis/goals.ts exists",
-        "generateGoals(healthData) returns array of Goal objects",
-        "Goal: { id, title, description, priority: 'high'|'medium'|'low', category, actionItems[] }",
-        "Generates goals based on out-of-range biomarkers",
-        "High priority: significantly out of range or critical markers (LDL, glucose)",
-        "Medium priority: moderately out of range",
-        "Low priority: borderline or optimization opportunities",
-        "Max 5-7 goals (most important)",
+        "lib/lifestyle/calculateWeeklySummary.ts exists",
+        "Function takes 7 days of Whoop/activity data",
+        "Calculates Sleep Consistency: % of nights within 30min of avg bedtime",
+        "Calculates HRV: 7-day average",
+        "Calculates Strain: 7-day average",
+        "Calculates Recovery: 7-day average",
+        "Handles missing days gracefully (uses available data)",
+        "Returns object with all 4 metrics",
         "typecheck passes"
       ],
       "priority": 10,
       "passes": true,
-      "notes": "Reference HEALTH_KNOWLEDGE.md for what goals to generate. E.g., high LDL → 'Lower artery-clogging cholesterol'"
+      "notes": "Aggregation logic for weekly stats. Assumes Whoop data is already in store."
     },
     {
-      "id": "UX-011",
-      "title": "Goal cards with gradient backgrounds",
+      "id": "DASH-011",
+      "title": "Dashboard Page Assembly",
       "acceptanceCriteria": [
-        "components/goals/GoalCard.tsx exists",
-        "Large card with gradient background",
-        "High priority: warm red/orange gradient",
-        "Medium priority: warm amber gradient",
-        "Low priority: cool blue gradient",
-        "Priority badge in top right corner",
-        "Title in large white text",
-        "'How to solve this >' link/button",
-        "Expandable to show action items",
+        "app/(main)/dashboard/page.tsx updated",
+        "Top: AI ChatBar component",
+        "Below ChatBar: DataFreshnessBar",
+        "Main grid layout with all components",
+        "Includes: BiologicalAgeCard, BiomarkerSummary, TopMarkersCard, DigitalTwin, GoalsPreview, WeeklyLifestyleCard",
+        "Responsive: stacks on mobile, grid on desktop",
+        "Consistent spacing using design tokens",
+        "All components pull from shared data stores",
+        "Page loads without errors",
         "typecheck passes"
       ],
       "priority": 11,
       "passes": true,
-      "notes": "Reference: InsideTracker Goals screenshot. Rich gradient backgrounds with white text overlay."
+      "notes": "Final assembly. All components integrated into dashboard page."
     },
     {
-      "id": "UX-012",
-      "title": "Goals page assembly",
+      "id": "DASH-012",
+      "title": "Chat Modal - Message Styling",
       "acceptanceCriteria": [
-        "app/(main)/goals/page.tsx exists",
-        "Page title: 'Goals'",
-        "Vertical stack of GoalCards",
-        "Sorted by priority (high first)",
-        "Shows generated goals from health data",
-        "Empty state if no goals (everything optimal)",
+        "User messages aligned right, blue/primary background",
+        "AI messages aligned left, gray/neutral background",
+        "Messages have rounded corners",
+        "Timestamps shown subtly below messages",
+        "AI messages support markdown rendering (bold, lists, etc.)",
+        "Smooth scroll to bottom on new message",
+        "Loading indicator (typing dots) while AI responds",
         "typecheck passes"
       ],
       "priority": 12,
       "passes": true,
-      "notes": "Simple vertical layout. 3-5 goal cards typically."
-    },
-    {
-      "id": "UX-013",
-      "title": "Data Sources page",
-      "acceptanceCriteria": [
-        "app/(main)/data-sources/page.tsx exists",
-        "Lists all files in /data folder",
-        "Shows: filename, file type icon, size, last modified",
-        "Status indicator: loaded successfully / error / pending",
-        "Shows what data was extracted from each file",
-        "'Sync Now' button to reload all data",
-        "Instructions for adding new files",
-        "typecheck passes"
-      ],
-      "priority": 13,
-      "passes": true,
-      "notes": "Transparency about what data is loaded. Helps user debug issues."
-    },
-    {
-      "id": "UX-014",
-      "title": "Dashboard page redesign",
-      "acceptanceCriteria": [
-        "app/(main)/dashboard/page.tsx updated",
-        "Top row: Health Score card + Biological Age card side by side",
-        "Second row: Digital Twin (left 50%) + Quick Stats (right 50%)",
-        "Quick Stats: HRV, Sleep Score, Body Fat % in compact cards",
-        "Third row: Top 3 Goals preview (compact version)",
-        "'View all goals' link to Goals page",
-        "Clean grid layout with consistent spacing",
-        "typecheck passes"
-      ],
-      "priority": 14,
-      "passes": true,
-      "notes": "Dashboard is the overview. Shows highlights, links to detail pages."
-    },
-    {
-      "id": "UX-015",
-      "title": "Biological Age card redesign",
-      "acceptanceCriteria": [
-        "components/dashboard/BiologicalAgeCard.tsx exists or updated",
-        "Shows: Chronological Age, Biological Age (PhenoAge), Delta",
-        "Delta prominently displayed with +/- and color",
-        "Negative delta (younger): green, positive indicator",
-        "Positive delta (older): pink, negative indicator",
-        "Mini sparkline showing biological age over time (if data exists)",
-        "Clean card matching design system",
-        "typecheck passes"
-      ],
-      "priority": 15,
-      "passes": true,
-      "notes": "Reference: InsideTracker screenshot. Clean layout with inline sparkline."
-    },
-    {
-      "id": "UX-016",
-      "title": "Quick stat mini cards",
-      "acceptanceCriteria": [
-        "components/dashboard/QuickStatCard.tsx exists",
-        "Compact card showing: label, value, status dot",
-        "Used for: HRV, RHR, Sleep Score, Body Fat %",
-        "Status dot: green (optimal), yellow (normal), pink (out of range)",
-        "Optional trend arrow (up/down/stable)",
-        "Consistent small size, fits 3-4 in a row",
-        "typecheck passes"
-      ],
-      "priority": 16,
-      "passes": true,
-      "notes": "Small summary cards for at-a-glance metrics."
-    },
-    {
-      "id": "UX-017",
-      "title": "Typography and spacing polish",
-      "acceptanceCriteria": [
-        "Consistent heading sizes across all pages",
-        "Page titles: text-2xl font-semibold",
-        "Section titles: text-lg font-medium",
-        "Body text: text-sm",
-        "Consistent padding: cards p-6, sections gap-6",
-        "All pages feel cohesive",
-        "No orphaned styles or inconsistent spacing",
-        "typecheck passes"
-      ],
-      "priority": 17,
-      "passes": true,
-      "notes": "Polish pass. Review all pages for consistency."
-    },
-    {
-      "id": "UX-018",
-      "title": "Loading and empty states",
-      "acceptanceCriteria": [
-        "Loading skeleton components for cards",
-        "Empty state for biomarkers: 'No biomarkers loaded. Add files to /data folder.'",
-        "Empty state for goals: 'No goals - your health looks great!'",
-        "Error state if data parsing fails",
-        "Suspense boundaries where appropriate",
-        "typecheck passes"
-      ],
-      "priority": 18,
-      "passes": true,
-      "notes": "Polish for edge cases."
-    },
-    {
-      "id": "UX-019",
-      "title": "Final polish and QA",
-      "acceptanceCriteria": [
-        "All pages look consistent and professional",
-        "Color coding is consistent everywhere",
-        "No console errors",
-        "Navigation works smoothly",
-        "Data flows correctly to all components",
-        "Looks good at 1280px+ width",
-        "typecheck passes"
-      ],
-      "priority": 19,
-      "passes": true,
-      "notes": "Final review. Test all pages and flows."
-    },
-    {
-      "id": "UX-020",
-      "title": "InsightCard component with gradient and expandable action items",
-      "acceptanceCriteria": [
-        "components/insights/InsightCard.tsx exists",
-        "Gradient background based on status (green=optimal, amber=warning, red=critical)",
-        "Shows title, value, and status indicator",
-        "Expandable dropdown with action items on click",
-        "Chevron icon indicates expandable state",
-        "Smooth expand/collapse animation",
-        "Matches design system tokens exactly",
-        "typecheck passes"
-      ],
-      "priority": 20,
-      "passes": true,
-      "notes": "Reusable card component for insight-driven data display. Used on Lifestyle and Body Comp pages."
-    },
-    {
-      "id": "UX-021",
-      "title": "Lifestyle page with insight cards and activity charts",
-      "acceptanceCriteria": [
-        "app/(main)/lifestyle/page.tsx exists",
-        "4 gradient InsightCards at top: HRV, Sleep Score, Resting HR, Strain",
-        "Each card has relevant action items when expanded",
-        "Below cards: recharts line chart showing HRV trend over 7 days",
-        "Second chart: Sleep hours bar chart with score overlay",
-        "Third chart: RHR trend line",
-        "All charts use design tokens for colors",
-        "Data wired to HealthDataStore activity data",
-        "Clean minimal chart styling",
-        "typecheck passes"
-      ],
-      "priority": 21,
-      "passes": true,
-      "notes": "Lifestyle page focuses on daily activity metrics from Whoop data."
-    },
-    {
-      "id": "UX-022",
-      "title": "Body Comp page with insight cards and composition charts",
-      "acceptanceCriteria": [
-        "app/(main)/body-comp/page.tsx exists",
-        "4 gradient InsightCards at top: Body Fat %, Lean Mass, Visceral Fat, ALMI",
-        "Each card has relevant action items when expanded",
-        "Below cards: horizontal bar chart showing body composition breakdown",
-        "Second chart: pie/donut chart for fat vs lean distribution",
-        "Data wired to HealthDataStore bodyComp data",
-        "All charts use design tokens for colors",
-        "Clean minimal chart styling matching existing pages",
-        "typecheck passes"
-      ],
-      "priority": 22,
-      "passes": true,
-      "notes": "Body Comp page focuses on DEXA scan data visualization."
-    },
-    {
-      "id": "UX-023",
-      "title": "Navigation tabs updated for Lifestyle and Body Comp",
-      "acceptanceCriteria": [
-        "TabNav includes Lifestyle tab between Biomarkers and Goals",
-        "TabNav includes Body Comp tab between Lifestyle and Goals",
-        "All 6 tabs display correctly: Dashboard, Biomarkers, Lifestyle, Body Comp, Goals, Data Sources",
-        "Active states work correctly for new tabs",
-        "Navigation works without full page reload",
-        "typecheck passes"
-      ],
-      "priority": 23,
-      "passes": true,
-      "notes": "Update navigation to include new pages."
+      "notes": "Polish the chat UI to feel professional."
     }
   ]
 }

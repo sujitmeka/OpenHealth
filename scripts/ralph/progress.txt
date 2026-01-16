@@ -1081,3 +1081,344 @@ All 18 user stories have been implemented:
 - DT-016: Status indicators overlay (priority 16)
 - DT-017: Click body region for details (priority 17)
 - DT-018: Final polish and responsive sizing (priority 18)
+
+---
+## 2026-01-16 - DASH-001: AI Chat Bar - Collapsed State
+
+**Implemented:**
+- Created src/components/ai-chat/ChatBar.tsx
+- Pill-shaped bar with full width, horizontal padding (12px 20px)
+- shadow-md for soft shadow effect
+- Left: AI sparkle icon with blue-purple gradient background
+- Center: Placeholder text 'Ask anything about your health...'
+- Right: 2-3 contextual pill buttons (hidden on mobile, shows chevron instead)
+- onExpand callback for bar clicks
+- onPillClick callback for pill button clicks (stops propagation)
+- Keyboard accessible (Enter/Space triggers expansion)
+- Uses design tokens: BACKGROUNDS, BORDERS, SHADOWS, TEXT_COLORS, RADIUS
+
+**Files created:**
+- src/components/ai-chat/ChatBar.tsx
+
+**Learnings:**
+- Design tokens imported from @/lib/design/tokens for consistent styling
+- e.stopPropagation() prevents pill clicks from triggering bar expansion
+- aria-label and role="button" for accessibility
+- sm: breakpoint for responsive pill visibility
+- tabIndex={0} enables keyboard navigation
+
+**Verified:**
+- [x] typecheck passes
+- [x] dev server runs (307 redirect to dashboard)
+
+---
+## 2026-01-16 - DASH-002: AI Chat Bar - Contextual Pills Logic
+
+**Implemented:**
+- Created src/lib/ai-chat/generateContextualPills.ts
+- Takes ExtractedBiomarkers as input, returns ContextualPill[] (id, label)
+- Identifies out_of_range and borderline markers using getBiomarkerStatus
+- Prioritizes ApoB and HbA1c (FIXED_PRIORITY) when out of range
+- Secondary priority for longevity markers (crp, vitaminD, ldl, etc.)
+- When all optimal: returns generic questions ("What's keeping me healthy?", etc.)
+- Questions kept concise with short name mappings (Vitamin D → Vit D)
+- Generates up to 3 contextual pills
+
+**Files created:**
+- src/lib/ai-chat/generateContextualPills.ts
+
+**Learnings:**
+- Use BIOMARKER_REFERENCES for displayName and reference ranges
+- getBiomarkerStatus returns 'optimal'|'normal'|'borderline'|'out_of_range'
+- Sort by fixed priority, then longevity priority, then status severity
+- Short name mappings help keep questions under 30 chars
+
+**Verified:**
+- [x] typecheck passes
+- [x] dev server runs
+
+---
+## 2026-01-16 - DASH-003: AI Chat Bar - Expanded State
+
+**Implemented:**
+- Created src/components/ai-chat/ChatModal.tsx
+- Modal with slide-down animation (slideDown keyframe)
+- Semi-transparent dark overlay (BACKGROUNDS.overlay)
+- Backdrop blur (blur(4px))
+- Chat interface: message list + input field with send button
+- Close button (X) in top right header
+- Click outside modal closes it (handleBackdropClick)
+- ESC key closes modal (document keydown listener)
+- Modal centered with max-width: 600px, max-height: 70vh
+- Auto-scroll to bottom when messages change
+- Loading indicator with bouncing dots animation
+- Empty state with sparkle icon and helpful text
+
+**Files created:**
+- src/components/ai-chat/ChatModal.tsx
+
+**Learnings:**
+- Use Z_INDEX.modal from design tokens for consistent layering
+- backdrop-filter: blur(4px) with WebkitBackdropFilter for cross-browser
+- CSS @keyframes for slideDown and fadeIn animations
+- useRef for auto-scroll to messagesEndRef
+- Cleanup event listeners in useEffect return
+- useCallback for stable handler references
+
+**Verified:**
+- [x] typecheck passes
+- [x] dev server runs (307 redirect)
+
+---
+## 2026-01-16 - DASH-004: AI Chat Bar - State Management
+
+**Implemented:**
+- Created src/lib/ai-chat/ChatContext.tsx with React context
+- ChatProvider wraps app to provide chat state
+- useChat hook for accessing state and actions
+- State: isExpanded, messages, inputValue, isLoading
+- Actions: expand, collapse, toggle, setInputValue, prefillInput, addMessage, setLoading, clearMessages
+- Created src/components/ai-chat/AIChatWidget.tsx
+- Integrates ChatBar and ChatModal with context
+- Clicking bar or pill calls expand/prefillInput
+- Close button calls collapse
+- Chat history persists when closing/reopening modal (stored in context)
+
+**Files created:**
+- src/lib/ai-chat/ChatContext.tsx
+- src/components/ai-chat/AIChatWidget.tsx
+
+**Learnings:**
+- React context with useCallback for stable action references
+- generateId() with Date.now() + random suffix for unique message IDs
+- Clear input after adding user message in addMessage
+- Placeholder AI response for now (DASH-005 implements real AI)
+
+**Verified:**
+- [x] typecheck passes
+- [x] dev server runs (307 redirect)
+
+---
+## 2026-01-16 - DASH-005: AI Chat Bar - Basic AI Response
+
+**Implemented:**
+- Created src/lib/ai-chat/chatWithAI.ts
+- Function sends POST request to /api/chat endpoint
+- Handles success and error responses
+- Returns ChatResponse { response: string; error?: string }
+- Updated AIChatWidget to use chatWithAI instead of placeholder
+- Error messages shown to user if API fails
+- Loading state managed during API call
+- Uses existing /api/chat route that calls Anthropic Claude API
+- System prompt in health-agent.ts includes biomarker reference ranges
+
+**Files created:**
+- src/lib/ai-chat/chatWithAI.ts
+
+**Files modified:**
+- src/components/ai-chat/AIChatWidget.tsx
+
+**Learnings:**
+- /api/chat already existed with queryHealthAgent implementation
+- healthContext from HealthDataStore.getHealthSummary() provides biomarker data
+- Agent uses claude-sonnet-4-5 model with $0.5 budget cap
+- Error handling: check response.ok, parse error message from JSON
+
+**Verified:**
+- [x] typecheck passes
+- [x] dev server runs (307 redirect)
+
+---
+## 2026-01-16 - DASH-006: Data Freshness Indicator
+
+**Implemented:**
+- Installed date-fns for relative time formatting
+- Added DataSourceTimestamps interface to health-data.ts
+- Updated HealthDataStore to track timestamps for bloodwork, dexa, activity
+- Added getTimestamps() method to HealthDataStore
+- Created src/components/dashboard/DataFreshnessBar.tsx
+- Shows last updated time for each data source
+- Freshness thresholds: fresh (<7 days), stale (>30 days), very stale (>90 days)
+- Color coding: normal text for fresh, yellow for stale, red for very stale
+- "Retest" badge shown for very stale data
+
+**Files created:**
+- src/components/dashboard/DataFreshnessBar.tsx
+
+**Files modified:**
+- src/lib/store/health-data.ts
+- package.json (added date-fns)
+
+**Learnings:**
+- date-fns formatDistanceToNow returns "3 days ago" style text
+- differenceInDays for threshold checks
+- parseISO to convert ISO string to Date
+- getDataFiles() already provides lastModified from fs.statSync
+
+**Verified:**
+- [x] typecheck passes
+- [x] dev server runs (307 redirect)
+
+---
+## 2026-01-16 - DASH-007: Top 5 Personalized Markers - Component
+
+**Implemented:**
+- Created src/components/dashboard/TopMarkersCard.tsx
+- Card with "Markers to Watch" title
+- Shows exactly 5 biomarkers in a list
+- Each row: status dot + marker name + value with unit
+- Status colors from design tokens (green/yellow/pink)
+- Compact layout fits dashboard grid
+- Links to /biomarkers page on click
+- Empty state when no data
+
+**Files created:**
+- src/components/dashboard/TopMarkersCard.tsx
+
+**Learnings:**
+- TopMarker interface: { name, value, unit, status }
+- BiomarkerStatus type from health.ts: 'optimal'|'normal'|'borderline'|'out_of_range'
+- formatValue helper rounds decimals
+
+**Verified:**
+- [x] typecheck passes
+
+---
+## 2026-01-16 - DASH-008: Top 5 Personalized Markers - Selection Logic
+
+**Implemented:**
+- Created src/lib/biomarkers/selectTopMarkers.ts
+- FIXED_MARKERS: apob, hba1c always included
+- LONGEVITY_PRIORITY: crp, vitaminD, ldl, hdl, triglycerides, fastingInsulin, homocysteine
+- DEPRIORITIZED_MARKERS: alkalinePhosphatase, mcv, rdw, wbc, creatinine
+- Score calculation: status severity + longevity priority - deprioritized penalty
+- Returns array of up to 5 TopMarker objects { name, value, unit, status }
+
+**Files created:**
+- src/lib/biomarkers/selectTopMarkers.ts
+
+**Learnings:**
+- Score system: out_of_range=100, borderline=50, normal=10, optimal=0
+- Longevity priority bonus: (listLength - index) * 10
+- Deprioritized penalty: -50
+- Filter by score descending after fixed markers
+
+**Verified:**
+- [x] typecheck passes
+
+---
+## 2026-01-16 - DASH-009: Weekly Lifestyle Summary - Component
+
+**Implemented:**
+- Created src/components/dashboard/WeeklyLifestyleCard.tsx
+- Card with "This Week" title and "7-day averages" subtitle
+- 4 metrics in 2x2 grid: Sleep Consistency, HRV, Strain, Recovery
+- Each metric: icon + value + label + subtext
+- Empty state with watch icon when no Whoop data
+- WeeklySummary interface: { sleepConsistency, hrv, strain, recovery }
+
+**Files created:**
+- src/components/dashboard/WeeklyLifestyleCard.tsx
+
+**Learnings:**
+- Nullable summary prop handles "no data connected" state
+- TypeScript strict null checks: use `summary !== null && summary.prop !== null`
+- Icons: moon for sleep, heart for HRV, lightning for strain, trending-up for recovery
+
+**Verified:**
+- [x] typecheck passes
+
+---
+## 2026-01-16 - DASH-010: Weekly Lifestyle Summary - Data Integration
+
+**Implemented:**
+- Created src/lib/lifestyle/calculateWeeklySummary.ts
+- Calculates Sleep Consistency: % nights within 30min of avg sleep duration
+- Calculates HRV: 7-day average
+- Calculates Strain: 7-day average
+- Calculates Recovery: 7-day average of sleepScore (Whoop recovery proxy)
+- Handles missing days gracefully (filters out 0 values)
+- Returns null if no activity data
+
+**Files created:**
+- src/lib/lifestyle/calculateWeeklySummary.ts
+
+**Learnings:**
+- slice(-7) gets last 7 elements efficiently
+- Type guard `filter((v): v is number => v !== undefined)` for optional values
+- Sleep consistency: count nights within tolerance of average
+- Recovery uses sleepScore as proxy (Whoop correlates sleep quality with recovery)
+
+**Verified:**
+- [x] typecheck passes
+
+---
+## 2026-01-16 - DASH-011: Dashboard Page Assembly
+
+**Implemented:**
+- Updated src/app/(main)/dashboard/page.tsx
+- Added AI ChatBar at top (wrapped in ChatProvider)
+- Added DataFreshnessBar below chat bar
+- Added TopMarkersCard in right column
+- Added WeeklyLifestyleCard below top markers
+- Responsive 12-column grid: DigitalTwin (4), StatsGrid (5), Right column (3)
+- All components pull from shared HealthDataStore
+- HeroMetrics, GoalsSection, footer links preserved
+
+**Files modified:**
+- src/app/(main)/dashboard/page.tsx
+
+**Learnings:**
+- ChatProvider wraps entire page to provide context
+- Server component fetches data, passes to client components
+- 12-col grid allows precise layout control
+- DataFreshnessBar uses negative margin for full-width effect
+
+**Verified:**
+- [x] typecheck passes
+- [x] dev server runs (307 redirect)
+- [x] Page loads without errors
+
+---
+## 2026-01-16 - DASH-012: Chat Modal - Message Styling
+
+**Implemented:**
+- User messages aligned right with blue/purple gradient
+- AI messages aligned left with gray/neutral background
+- Rounded corners with asymmetric design
+- Timestamps shown subtly below each message
+- Simple markdown rendering for AI messages (bold, lists)
+- formatTimestamp shows "Just now", "Xm ago", "Xh ago"
+- renderMarkdown handles bullet lists, numbered lists, paragraphs, bold text
+- Smooth scroll to bottom (already implemented in DASH-003)
+- Loading indicator (already implemented in DASH-003)
+
+**Files modified:**
+- src/components/ai-chat/ChatModal.tsx
+
+**Learnings:**
+- Simple markdown parser handles most AI output formats
+- Split content by newlines, detect list patterns (- or * or \d+.)
+- processInline handles **bold** syntax with regex split
+- flex-col + items-end/items-start for message alignment with timestamp
+
+**Verified:**
+- [x] typecheck passes
+- [x] dev server runs (307 redirect)
+
+---
+## DASHBOARD SPRINT COMPLETE
+
+All 12 user stories have been implemented:
+- DASH-001: AI Chat Bar - Collapsed State (priority 1)
+- DASH-002: AI Chat Bar - Contextual Pills Logic (priority 2)
+- DASH-003: AI Chat Bar - Expanded State (priority 3)
+- DASH-004: AI Chat Bar - State Management (priority 4)
+- DASH-005: AI Chat Bar - Basic AI Response (priority 5)
+- DASH-006: Data Freshness Indicator (priority 6)
+- DASH-007: Top 5 Personalized Markers - Component (priority 7)
+- DASH-008: Top 5 Personalized Markers - Selection Logic (priority 8)
+- DASH-009: Weekly Lifestyle Summary - Component (priority 9)
+- DASH-010: Weekly Lifestyle Summary - Data Integration (priority 10)
+- DASH-011: Dashboard Page Assembly (priority 11)
+- DASH-012: Chat Modal - Message Styling (priority 12)
