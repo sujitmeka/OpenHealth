@@ -352,16 +352,34 @@ class HealthDataStoreClass {
     if (!extracted.all) return [];
 
     // Convert measured biomarkers
-    const measured: CachedBiomarker[] = extracted.all.map((b) => ({
-      id: normalizeBiomarkerName(b.name),
-      name: b.name,
-      value: b.value,
-      unit: b.unit,
-      referenceRange: b.referenceRange,
-      labStatus: b.status,
-      category: b.category,
-      source: 'measured' as const,
-    }));
+    // CBC differentials that have both % and absolute count variants
+    const cbcDifferentials = [
+      'neutrophils',
+      'lymphocytes',
+      'monocytes',
+      'eosinophils',
+      'basophils',
+    ];
+
+    const measured: CachedBiomarker[] = extracted.all.map((b) => {
+      let id = normalizeBiomarkerName(b.name);
+
+      // If this is a CBC differential with % unit, use the Percent variant
+      if (cbcDifferentials.includes(id) && b.unit === '%') {
+        id = `${id}Percent`;
+      }
+
+      return {
+        id,
+        name: b.name,
+        value: b.value,
+        unit: b.unit,
+        referenceRange: b.referenceRange,
+        labStatus: b.status,
+        category: b.category,
+        source: 'measured' as const,
+      };
+    });
 
     // Build raw values map for calculations
     const rawValues: Record<string, number> = {};
@@ -382,12 +400,21 @@ class HealthDataStoreClass {
       source: 'calculated' as const,
     }));
 
+    // Deduplicate measured biomarkers (same biomarker may appear in multiple panels)
+    const uniqueMeasured: CachedBiomarker[] = [];
+    const seenIds = new Set<string>();
+    for (const m of measured) {
+      if (!seenIds.has(m.id)) {
+        seenIds.add(m.id);
+        uniqueMeasured.push(m);
+      }
+    }
+
     // Combine measured + calculated, avoiding duplicates
     // (some calculated like nonHdlC might already be in measured from lab)
-    const measuredIds = new Set(measured.map((m) => m.id));
-    const uniqueCalculated = calculatedCached.filter((c) => !measuredIds.has(c.id));
+    const uniqueCalculated = calculatedCached.filter((c) => !seenIds.has(c.id));
 
-    return [...measured, ...uniqueCalculated];
+    return [...uniqueMeasured, ...uniqueCalculated];
   }
 
   async getBiomarkers(): Promise<ExtractedBiomarkers> {
