@@ -602,25 +602,7 @@ export function mergeWithCalculated(raw: RawBiomarkers): RawBiomarkers {
   return merged;
 }
 
-/**
- * Get the reference for a biomarker by ID or name
- */
-export function getBiomarkerReference(idOrName: string) {
-  // Try direct ID lookup
-  if (BIOMARKER_REFERENCES[idOrName]) {
-    return BIOMARKER_REFERENCES[idOrName];
-  }
-
-  // Try case-insensitive name match
-  const normalized = idOrName.toLowerCase().trim();
-  for (const ref of Object.values(BIOMARKER_REFERENCES)) {
-    if (ref.name.toLowerCase() === normalized) {
-      return ref;
-    }
-  }
-
-  return undefined;
-}
+// getBiomarkerReference is now exported from reference.ts with alias support
 
 /**
  * Determine status based on value and reference

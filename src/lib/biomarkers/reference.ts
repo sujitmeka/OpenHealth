@@ -1211,6 +1211,8 @@ export const BIOMARKER_REFERENCES: Record<string, BiomarkerReference> = {
     name: 'DHEA-S',
     category: 'male-hormones',
     unit: 'µg/dL',
+    standardRange: { min: 160, max: 449 }, // Age 20-40 male
+    optimalRange: { min: 300, max: 450 },
     direction: 'higher',
   },
   cortisolAm: {
@@ -1263,7 +1265,9 @@ export const BIOMARKER_REFERENCES: Record<string, BiomarkerReference> = {
     name: 'Free Androgen Index',
     category: 'male-hormones',
     unit: 'index',
-    direction: 'context',
+    standardRange: { min: 30, max: 150 },
+    optimalRange: { min: 40, max: 80 },
+    direction: 'mid-range',
     isCalculated: true,
     formula: '(totalTestosterone [nmol/L] * 100) / shbg',
   },
@@ -1515,7 +1519,100 @@ export const BIOMARKER_REFERENCES: Record<string, BiomarkerReference> = {
     optimalRange: { min: 2.3, max: 3.0 },
     direction: 'mid-range',
   },
+  // Generic estradiol entry (defaults to male ranges)
+  estradiol: {
+    id: 'estradiol',
+    name: 'Estradiol',
+    category: 'male-hormones',
+    unit: 'pg/mL',
+    standardRange: { min: 10, max: 40 },
+    optimalRange: { min: 20, max: 30 },
+    direction: 'mid-range',
+  },
 };
+
+// ID aliases for biomarkers that may be extracted with different names
+export const BIOMARKER_ID_ALIASES: Record<string, string> = {
+  // Estrogen variants
+  'e2': 'estradiol',
+  'oestradiol': 'estradiol',
+
+  // Common abbreviations
+  'rbc count': 'rbc',
+  'wbc count': 'wbc',
+  'hgb': 'hemoglobin',
+  'hct': 'hematocrit',
+  'plt': 'platelets',
+
+  // Cholesterol variants
+  'ldl-c': 'ldl',
+  'hdl-c': 'hdl',
+  'total chol': 'totalCholesterol',
+  'tc': 'totalCholesterol',
+  'tg': 'triglycerides',
+  'trigs': 'triglycerides',
+
+  // Thyroid
+  'free t4': 'freeT4',
+  'free t3': 'freeT3',
+  't4 free': 'freeT4',
+  't3 free': 'freeT3',
+
+  // Liver
+  'sgot': 'ast',
+  'sgpt': 'alt',
+  'alk phos': 'alkalinePhosphatase',
+
+  // Kidney
+  'egfr': 'egfr',
+  'bun': 'bun',
+
+  // Other
+  'hs-crp': 'crp',
+  'hscrp': 'crp',
+  'vit d': 'vitaminD',
+  '25-oh vitamin d': 'vitaminD',
+};
+
+/**
+ * Resolve a biomarker ID to its canonical reference ID
+ * Handles aliases and case variations
+ */
+export function resolveBiomarkerId(id: string): string {
+  // First try exact match
+  if (BIOMARKER_REFERENCES[id]) {
+    return id;
+  }
+
+  // Try lowercase
+  const lowerId = id.toLowerCase();
+  if (BIOMARKER_REFERENCES[lowerId]) {
+    return lowerId;
+  }
+
+  // Try alias
+  const aliasId = BIOMARKER_ID_ALIASES[lowerId];
+  if (aliasId && BIOMARKER_REFERENCES[aliasId]) {
+    return aliasId;
+  }
+
+  // Try camelCase conversion
+  const camelId = lowerId.replace(/[^a-z0-9]+(.)/g, (_, c) => c.toUpperCase());
+  if (BIOMARKER_REFERENCES[camelId]) {
+    return camelId;
+  }
+
+  // Return original if no match found
+  return id;
+}
+
+/**
+ * Get biomarker reference, handling aliases
+ */
+export function getBiomarkerReference(id: string): BiomarkerReference | undefined {
+  const resolvedId = resolveBiomarkerId(id);
+  return BIOMARKER_REFERENCES[resolvedId];
+}
 
 // Get all biomarker IDs
 export const ALL_BIOMARKER_IDS = Object.keys(BIOMARKER_REFERENCES);
