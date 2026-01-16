@@ -68,6 +68,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -76,10 +77,24 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Personal health data (NEVER commit)
-/data/
+# Personal health data (NEVER commit actual data files)
+/data/**/*
+!/data/
+!/data/Bloodwork/
+!/data/Bloodwork/.gitkeep
+!/data/Body Scan/
+!/data/Body Scan/.gitkeep
+!/data/Activity/
+!/data/Activity/Whoop/
+!/data/Activity/Whoop/.gitkeep
+!/data/Activity/Apple Health/
+!/data/Activity/Apple Health/.gitkeep
+!/data/Activity/Oura/
+!/data/Activity/Oura/.gitkeep
+!/data/Activity/Fitbit/
+!/data/Activity/Fitbit/.gitkeep
 
-# Local rules
+# Local development files
 /rules/
 
 # Internal development docs (not for public)
