@@ -3,6 +3,7 @@ import { parseTextFile } from '@/lib/parsers/text';
 import { parsePdf } from '@/lib/parsers/pdf';
 import { parseCsv, CsvRow } from '@/lib/parsers/csv';
 import { extractBiomarkers, ExtractedBiomarkers } from '@/lib/extractors/biomarkers';
+import { extractBiomarkersWithAI } from '@/lib/extractors/ai-extractor';
 import { extractBodyComposition, BodyComposition } from '@/lib/extractors/body-comp';
 import { calculatePhenoAge, PhenoAgeResult } from '@/lib/calculations/phenoage';
 
@@ -15,12 +16,19 @@ export interface ActivityData {
   strain?: number;
 }
 
+export interface DataSourceTimestamps {
+  bloodwork: string | null;
+  dexa: string | null;
+  activity: string | null;
+}
+
 export interface HealthData {
   biomarkers: ExtractedBiomarkers;
   bodyComp: BodyComposition;
   activity: ActivityData[];
   phenoAge: PhenoAgeResult | null;
   chronologicalAge: number | null;
+  timestamps: DataSourceTimestamps;
 }
 
 class HealthDataStoreClass {
@@ -30,6 +38,11 @@ class HealthDataStoreClass {
     activity: [],
     phenoAge: null,
     chronologicalAge: null,
+    timestamps: {
+      bloodwork: null,
+      dexa: null,
+      activity: null,
+    },
   };
 
   private loaded = false;
@@ -41,23 +54,38 @@ class HealthDataStoreClass {
     let bodyCompText = '';
     const activityRows: CsvRow[] = [];
 
+    let usedAIExtraction = false;
+
     for (const file of files) {
       if (file.type === 'bloodwork') {
+        // Track timestamp for bloodwork
+        this.data.timestamps.bloodwork = file.lastModified ?? null;
         if (file.extension === '.txt') {
           biomarkerText = parseTextFile(file.path);
         } else if (file.extension === '.pdf') {
-          biomarkerText = await parsePdf(file.path);
+          // Use AI extraction for PDFs (works with any lab format)
+          const pdfText = await parsePdf(file.path);
+          if (pdfText) {
+            this.data.biomarkers = await extractBiomarkersWithAI(pdfText);
+            usedAIExtraction = true;
+          }
         }
       } else if (file.type === 'dexa' && file.extension === '.txt') {
+        // Track timestamp for DEXA
+        this.data.timestamps.dexa = file.lastModified ?? null;
         bodyCompText = parseTextFile(file.path);
       } else if (file.type === 'activity' && file.extension === '.csv') {
+        // Track timestamp for activity
+        this.data.timestamps.activity = file.lastModified ?? null;
         const rows = parseCsv(file.path);
         activityRows.push(...rows);
       }
     }
 
-    // Extract biomarkers
-    this.data.biomarkers = extractBiomarkers(biomarkerText);
+    // Extract biomarkers from text files (fallback to regex if AI wasn't used)
+    if (!usedAIExtraction && biomarkerText) {
+      this.data.biomarkers = extractBiomarkers(biomarkerText);
+    }
 
     // Get patient age from biomarkers extraction
     this.data.chronologicalAge = this.data.biomarkers.patientAge ?? null;
@@ -110,6 +138,11 @@ class HealthDataStoreClass {
   async getChronologicalAge(): Promise<number | null> {
     await this.ensureLoaded();
     return this.data.chronologicalAge;
+  }
+
+  async getTimestamps(): Promise<DataSourceTimestamps> {
+    await this.ensureLoaded();
+    return this.data.timestamps;
   }
 
   async getHealthSummary(): Promise<string> {
@@ -183,5 +216,14 @@ function formatKey(key: string): string {
     .trim();
 }
 
-// Singleton export
-export const HealthDataStore = new HealthDataStoreClass();
+// Singleton export (use global to persist in Next.js dev mode)
+const globalForHealthData = globalThis as unknown as {
+  healthDataStore: HealthDataStoreClass | undefined;
+};
+
+export const HealthDataStore =
+  globalForHealthData.healthDataStore ?? new HealthDataStoreClass();
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForHealthData.healthDataStore = HealthDataStore;
+}
