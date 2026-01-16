@@ -122,17 +122,28 @@ class HealthDataStoreClass {
               this.data.biomarkers = await extractBiomarkersWithAI(pdfText);
               usedAIExtraction = true;
 
-              // Save to cache
-              writeBiomarkerCache({
-                version: 1,
-                extractedAt: new Date().toISOString(),
-                sourceFile: relativePath,
-                sourceHash: fileHash,
-                patientAge: this.data.biomarkers.patientAge,
-                biomarkers: this.convertExtractedToCached(this.data.biomarkers),
-              });
-              updateManifestEntry(manifest, relativePath, fileHash, 'bloodwork');
-              manifestChanged = true;
+              // Only cache if extraction succeeded (has meaningful data)
+              const biomarkerCount = this.data.biomarkers.all?.length ?? 0;
+
+              if (biomarkerCount >= 10) {
+                writeBiomarkerCache({
+                  version: 1,
+                  extractedAt: new Date().toISOString(),
+                  sourceFile: relativePath,
+                  sourceHash: fileHash,
+                  patientAge: this.data.biomarkers.patientAge,
+                  biomarkers: this.convertExtractedToCached(this.data.biomarkers),
+                });
+                updateManifestEntry(manifest, relativePath, fileHash, 'bloodwork');
+                manifestChanged = true;
+                console.log(
+                  `[HealthAI] Biomarker extraction successful (${biomarkerCount}), cached`
+                );
+              } else {
+                console.warn(
+                  `[HealthAI] Biomarker extraction returned only ${biomarkerCount} items, NOT caching`
+                );
+              }
             }
           }
         }
