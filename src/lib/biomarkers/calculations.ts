@@ -102,6 +102,67 @@ export function calculateDerivedBiomarkers(raw: RawBiomarkers): CalculatedBiomar
     });
   }
 
+  // Atherogenic Coefficient
+  if (raw.totalCholesterol && raw.hdl && raw.hdl > 0) {
+    calculated.push({
+      id: 'atherogenicCoeff',
+      name: 'Atherogenic Coefficient',
+      value: round((raw.totalCholesterol - raw.hdl) / raw.hdl, 2),
+      unit: 'ratio',
+      formula: '(TC − HDL) ÷ HDL',
+      inputs: ['totalCholesterol', 'hdl'],
+    });
+  }
+
+  // LDL/ApoB Ratio
+  if (raw.ldl && raw.apoB && raw.apoB > 0) {
+    calculated.push({
+      id: 'ldlApoBRatio',
+      name: 'LDL/ApoB Ratio',
+      value: round(raw.ldl / raw.apoB, 2),
+      unit: 'ratio',
+      formula: 'LDL ÷ ApoB',
+      inputs: ['ldl', 'apoB'],
+    });
+  }
+
+  // Non-HDL/ApoB Ratio
+  if (raw.totalCholesterol && raw.hdl && raw.apoB && raw.apoB > 0) {
+    const nonHdl = raw.totalCholesterol - raw.hdl;
+    calculated.push({
+      id: 'nonHdlApoBRatio',
+      name: 'Non-HDL/ApoB Ratio',
+      value: round(nonHdl / raw.apoB, 2),
+      unit: 'ratio',
+      formula: '(TC − HDL) ÷ ApoB',
+      inputs: ['totalCholesterol', 'hdl', 'apoB'],
+    });
+  }
+
+  // TG/ApoB Ratio
+  if (raw.triglycerides && raw.apoB && raw.apoB > 0) {
+    calculated.push({
+      id: 'tgApoBRatio',
+      name: 'TG/ApoB Ratio',
+      value: round(raw.triglycerides / raw.apoB, 2),
+      unit: 'ratio',
+      formula: 'TG ÷ ApoB',
+      inputs: ['triglycerides', 'apoB'],
+    });
+  }
+
+  // LDL/TC Ratio
+  if (raw.ldl && raw.totalCholesterol && raw.totalCholesterol > 0) {
+    calculated.push({
+      id: 'ldlTcRatio',
+      name: 'LDL/TC Ratio',
+      value: round(raw.ldl / raw.totalCholesterol, 2),
+      unit: 'ratio',
+      formula: 'LDL ÷ TC',
+      inputs: ['ldl', 'totalCholesterol'],
+    });
+  }
+
   // ============================================
   // INSULIN SENSITIVITY CALCULATIONS
   // ============================================
@@ -170,6 +231,30 @@ export function calculateDerivedBiomarkers(raw: RawBiomarkers): CalculatedBiomar
       unit: 'ratio',
       formula: 'Albumin ÷ Globulin',
       inputs: ['albumin', 'globulin'],
+    });
+  }
+
+  // Bilirubin-to-Albumin Ratio
+  if (raw.totalBilirubin && raw.albumin && raw.albumin > 0) {
+    calculated.push({
+      id: 'bilirubinAlbuminRatio',
+      name: 'Bilirubin/Albumin Ratio',
+      value: round(raw.totalBilirubin / raw.albumin, 3),
+      unit: 'ratio',
+      formula: 'Total Bilirubin ÷ Albumin',
+      inputs: ['totalBilirubin', 'albumin'],
+    });
+  }
+
+  // Indirect/Direct Bilirubin Ratio
+  if (raw.indirectBilirubin && raw.directBilirubin && raw.directBilirubin > 0) {
+    calculated.push({
+      id: 'indirectDirectBilirubin',
+      name: 'Indirect/Direct Bilirubin',
+      value: round(raw.indirectBilirubin / raw.directBilirubin, 1),
+      unit: 'ratio',
+      formula: 'Indirect Bilirubin ÷ Direct Bilirubin',
+      inputs: ['indirectBilirubin', 'directBilirubin'],
     });
   }
 
@@ -376,6 +461,68 @@ export function calculateDerivedBiomarkers(raw: RawBiomarkers): CalculatedBiomar
       unit: 'ratio',
       formula: 'RDW ÷ MCV',
       inputs: ['rdw', 'mcv'],
+    });
+  }
+
+  // NLPR (NLR-Platelet Ratio)
+  // Requires NLR calculated first - use neutrophils/lymphocytes
+  if (neutrophils && lymphocytes && lymphocytes > 0 && raw.platelets) {
+    const nlrValue = neutrophils / lymphocytes;
+    const nlpr = nlrValue / (raw.platelets / 100);
+    calculated.push({
+      id: 'nlpr',
+      name: 'NLPR (NLR-Platelet Ratio)',
+      value: round(nlpr, 2),
+      unit: 'ratio',
+      formula: 'NLR ÷ (Platelets ÷ 100)',
+      inputs: ['neutrophils', 'lymphocytes', 'platelets'],
+    });
+  }
+
+  // ============================================
+  // METABOLIC RATIOS
+  // ============================================
+
+  // Uric Acid-to-HDL Ratio
+  if (raw.uricAcid && raw.hdl && raw.hdl > 0) {
+    calculated.push({
+      id: 'uricAcidHdlRatio',
+      name: 'Uric Acid/HDL Ratio',
+      value: round(raw.uricAcid / raw.hdl, 3),
+      unit: 'ratio',
+      formula: 'Uric Acid ÷ HDL',
+      inputs: ['uricAcid', 'hdl'],
+    });
+  }
+
+  // ============================================
+  // HORMONE RATIOS
+  // ============================================
+
+  // Testosterone/Estradiol Ratio (Male)
+  if (raw.totalTestosterone && raw.estradiol && raw.estradiol > 0) {
+    calculated.push({
+      id: 'testosteroneEstradiolRatio',
+      name: 'Testosterone/Estradiol Ratio',
+      value: round(raw.totalTestosterone / raw.estradiol, 1),
+      unit: 'ratio',
+      formula: 'Total Testosterone (ng/dL) ÷ Estradiol (pg/mL)',
+      inputs: ['totalTestosterone', 'estradiol'],
+    });
+  }
+
+  // Free Androgen Index (FAI)
+  // Total T must be converted from ng/dL to nmol/L: multiply by 0.0347
+  if (raw.totalTestosterone && raw.shbg && raw.shbg > 0) {
+    const tNmol = raw.totalTestosterone * 0.0347;
+    const fai = (tNmol * 100) / raw.shbg;
+    calculated.push({
+      id: 'freeAndrogenIndex',
+      name: 'Free Androgen Index (FAI)',
+      value: round(fai, 1),
+      unit: 'index',
+      formula: '(Total T [nmol/L] × 100) ÷ SHBG',
+      inputs: ['totalTestosterone', 'shbg'],
     });
   }
 
