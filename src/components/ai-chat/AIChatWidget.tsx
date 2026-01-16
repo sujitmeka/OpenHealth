@@ -1,6 +1,7 @@
 'use client';
 
 import { useChat } from '@/lib/ai-chat/ChatContext';
+import { chatWithAI } from '@/lib/ai-chat/chatWithAI';
 import { ChatBar } from './ChatBar';
 import { ChatModal } from './ChatModal';
 import type { ContextualPill } from '@/lib/ai-chat/generateContextualPills';
@@ -38,17 +39,21 @@ export function AIChatWidget({
     setLoading(true);
 
     try {
-      // For now, just add a placeholder response
-      // DASH-005 will implement actual AI response
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      addMessage(
-        'assistant',
-        'This is a placeholder response. AI integration coming soon!'
-      );
+      // Call the AI chat API
+      const result = await chatWithAI(content);
+
+      if (result.error) {
+        addMessage(
+          'assistant',
+          `I'm sorry, I encountered an error: ${result.error}. Please try again.`
+        );
+      } else {
+        addMessage('assistant', result.response);
+      }
     } catch {
       addMessage(
         'assistant',
-        'Sorry, something went wrong. Please try again.'
+        'Sorry, something went wrong. Please check your API key is set and try again.'
       );
     } finally {
       setLoading(false);
