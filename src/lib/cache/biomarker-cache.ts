@@ -26,6 +26,7 @@ export interface BiomarkerCache {
   version: number;
   extractedAt: string;
   sourceFile: string;
+  sourceHash: string;
   patientAge?: number;
   biomarkers: CachedBiomarker[];
 }
@@ -378,4 +379,12 @@ export function clearCache(): void {
 export function isCacheValid(): boolean {
   const cache = readCache();
   return cache !== null && cache.biomarkers.length > 0;
+}
+
+/**
+ * Check if cached biomarkers match current file hash
+ */
+export function isBiomarkerCacheValid(currentHash: string): boolean {
+  const cache = readCache();
+  return cache !== null && cache.sourceHash === currentHash && cache.biomarkers.length > 0;
 }
